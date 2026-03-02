@@ -10,7 +10,10 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "worker": "ts-node src/workers/notificationWorker.ts",
-    "email-worker": "ts-node src/workers/emailWorker.ts"
+    "email-worker": "ts-node src/workers/emailWorker.ts",
+    "migrate":"migrate-mongo up",
+    "migrate:down":"migrate-mongo down",
+    "migrate:status": "migrate-mongo status"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +38,7 @@
     "ioredis": "^5.10.0",
     "jsonwebtoken": "^9.0.3",
     "mammoth": "^1.11.0",
+    "migrate-mongo": "^14.0.7",
     "mongodb-memory-server": "^11.0.1",
     "mongoose": "^9.2.0",
     "multer": "^2.0.2",
