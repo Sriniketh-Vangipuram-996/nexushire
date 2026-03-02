@@ -13,7 +13,6 @@ import adminRoutes from "../src/routes/admin";
 import notificationRoutes from "../src/routes/notificationRoutes";
 import reminderRoutes from "../src/routes/reminderRoutes";
 import healthRoutes from "./routes/health"
-import mongoSanitize from "express-mongo-sanitize";
 import { httpLogger } from "./middleware/logger";
 import { requestIdMiddleware } from "./middleware/requestId";
 import { requestLogger } from "./middleware/requestLogger";
