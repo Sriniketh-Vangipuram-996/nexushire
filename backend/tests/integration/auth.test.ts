@@ -1,6 +1,6 @@
 import request from "supertest";
 import app from "../../src/app";
-
+jest.setTimeout(30000);
 describe("Auth Flow", () => {
   it("should register, login and access protected route", async () => {
     const agent = request.agent(app); // Agent preserves cookies
