@@ -20,6 +20,8 @@ import { globalRateLimiter } from "./middleware/rateLimiter";
 import {register} from "./metrics/metrics";
 import { metricsMiddleware } from "./middleware/metricsMiddleware";
 import { securityMiddleware } from "./middleware/security";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./docs/swagger";
 
 const app=express();
 
@@ -48,5 +50,6 @@ app.get("/metrics",async(req,res)=>{
     res.set("Content-Type",register.contentType);
     res.end(await register.metrics());
 })
+app.use("/api/docs",swaggerUi.serve,swaggerUi.setup(swaggerSpec));
 app.use(healthRoutes);
 export default app;
