@@ -8,9 +8,7 @@ import { signEmailToken } from "../utils/emailToken";
 import { sendVerificationEmail } from "../utils/sendEmail";
 import { signResetToken } from "../utils/resetToken";
 import { sendResetPasswordEmail } from "../utils/sendResetEmail";
-import { scopedQuery } from "../utils/scopedQuery";
 import { Tenant } from "../models/Tenant";
-import { logger } from "../utils/logger";
 import { createAuditLog } from "../services/auditService";
 
 
@@ -25,10 +23,6 @@ export const signup=async(req:Request,res:Response)=>{
     try{
         const email=req.body.email?.trim().toLowerCase();
         const password=req.body.password?.trim();
-         console.log("EMAIL:", email);
-console.log("PASSWORD:", password);
-console.log("EMAIL VALID:", emailRegex.test(email));
-console.log("HAS SPECIAL:", specialRegex.test(password));
         // Validation
         if (!email || !password || !emailRegex.test(email) || !passwordRegex.test(password)) {
   return res.status(400).json({
@@ -95,6 +89,14 @@ export const login=async(req:Request,res:Response)=>{
                 error:"Please verify your email before logging in."
             })
         }
+         await createAuditLog({
+            actorId: user._id.toString(),
+            action: "USER_LOGIN",
+            targetType: "User",
+            targetId: user._id.toString(),
+            ip: req.ip,
+            requestId: req.requestId,
+        });
 
         const accessToken=signAccessToken(user._id.toString(),user.role,user.tenantId.toString());
         const refreshToken=signRefreshToken(user._id.toString(),user.role,user.tenantId.toString());
@@ -115,15 +117,6 @@ export const login=async(req:Request,res:Response)=>{
         })
 
         .json({message:"Login Successful"});
-
-        await createAuditLog({
-            actorId: user._id.toString(),
-            action: "USER_LOGIN",
-            targetType: "User",
-            targetId: user._id.toString(),
-            ip: req.ip,
-            requestId: req.requestId,
-        });
     }
 
     catch(error){
