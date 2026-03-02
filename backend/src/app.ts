@@ -19,17 +19,19 @@ import { requestLogger } from "./middleware/requestLogger";
 import { globalRateLimiter } from "./middleware/rateLimiter";
 import {register} from "./metrics/metrics";
 import { metricsMiddleware } from "./middleware/metricsMiddleware";
+import { securityMiddleware } from "./middleware/security";
 
 const app=express();
 
 app.use(cors({origin:process.env.FRONTEND_URL,credentials:true}));
-app.use(express.json());
+app.use(express.json({limit:"10kb"}));
 app.use(httpLogger);
 app.use(cookieParser());
 app.use(requestIdMiddleware);
 app.use(requestLogger);
 app.use(globalRateLimiter); // Apply global rate limiter to all routes
 app.use(metricsMiddleware);
+app.use(securityMiddleware);
 //Routes..
 app.use("/api/auth",authRoutes);
 app.use("/api/jobs",jobRoutes);
