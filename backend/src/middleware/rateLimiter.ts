@@ -4,7 +4,7 @@ import RedisStore from "rate-limit-redis";
 import { ipKeyGenerator } from "express-rate-limit";
 
 const isTest = process.env.NODE_ENV === "test";
-
+const isTestOrLoad=["test","loadtest"].includes(process.env.NODE_ENV||"");
 /**
  * Redis client (disabled in test)
  */
@@ -43,7 +43,7 @@ const createRateLimiter = ({
 }) =>
   rateLimit({
     // ✅ Use memory store in test
-    store: isTest
+    store: isTestOrLoad
       ? undefined
       : new RedisStore({
           sendCommand: (...args: string[]) =>

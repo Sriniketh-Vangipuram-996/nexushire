@@ -7,8 +7,10 @@ const redis=new Redis({
     port:Number(process.env.REDIS_PORT),
 });
 
+const ENABLE_RATE_LIMITER=process.env.ENABLE_RATE_LIMITER!=="false";
 export const slidingWindowLimiter=(windowMs:number,max:number)=>{
     return async(req:Request,res:Response,next:NextFunction)=>{
+        if(!ENABLE_RATE_LIMITER)return next(); //skip rate limiter in load test
         const key=`sliding:${req.ip}`;
         const now=Date.now();
         const windowStart=now-windowMs;
