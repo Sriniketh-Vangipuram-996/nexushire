@@ -10,7 +10,10 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "worker": "ts-node src/workers/notificationWorker.ts",
-    "email-worker": "ts-node src/workers/emailWorker.ts"
+    "email-worker": "ts-node src/workers/emailWorker.ts",
+    "start:pm2":"pm2 start ecosystem.config.js",
+    "stop:pm2":"pm2 stop nexushire-backend",
+    "restart:pm2":"pm2 reload nexushire-backend"
   },
   "keywords": [],
   "author": "",
@@ -43,6 +46,7 @@
     "pdf-parse": "^1.1.1",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
+    "pm2": "^6.0.14",
     "rate-limit-redis": "^4.3.1",
     "redis": "^4.7.1",
     "sharp": "^0.34.5",

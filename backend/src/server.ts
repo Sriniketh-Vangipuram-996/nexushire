@@ -17,6 +17,7 @@ import { connectPubSub, subscriber } from "./utils/redisPubSub";
 import { getIO } from "./socket";
 import Notification from "./models/Notification";
 import { logger } from "./utils/logger";
+import mongoose from "mongoose";
 
 const PORT = process.env.PORT || 5000;
 const isTest=process.env.NODE_ENV==="test";
@@ -96,11 +97,30 @@ subscriber.on("message", async (channel: string, message: string) => {
       logger.info(`🚀 Server running on port ${PORT}`);
     });
 
+    const gracefulShutdown=async()=>{
+      logger.info("Shutting down gracefully....");
+
+      server.close(async()=>{
+        await mongoose.connection.close();
+        logger.info("Mongo connection closed.");
+        process.exit(0);
+      });
+
+      setTimeout(()=>{
+        logger.error("Force Shutdown");
+        process.exit(1);
+      },10000);
+    };
+
+    process.on("SIGTERM",gracefulShutdown);
+    process.on("SIGINT",gracefulShutdown);
+
   } catch (error) {
     logger.info("❌ Failed to start server:");
     logger.error(error);
     process.exit(1);
   }
+
 }
 
 if(!isTest){
