@@ -18,6 +18,7 @@ import { getIO } from "./socket";
 import Notification from "./models/Notification";
 import { logger } from "./utils/logger";
 
+
 const PORT = process.env.PORT || 5000;
 const isTest=process.env.NODE_ENV==="test";
 async function start() {

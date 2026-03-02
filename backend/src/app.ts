@@ -17,6 +17,8 @@ import { httpLogger } from "./middleware/logger";
 import { requestIdMiddleware } from "./middleware/requestId";
 import { requestLogger } from "./middleware/requestLogger";
 import { globalRateLimiter } from "./middleware/rateLimiter";
+import {register} from "./metrics/metrics";
+import { metricsMiddleware } from "./middleware/metricsMiddleware";
 
 const app=express();
 
@@ -27,6 +29,7 @@ app.use(cookieParser());
 app.use(requestIdMiddleware);
 app.use(requestLogger);
 app.use(globalRateLimiter); // Apply global rate limiter to all routes
+app.use(metricsMiddleware);
 //Routes..
 app.use("/api/auth",authRoutes);
 app.use("/api/jobs",jobRoutes);
@@ -39,5 +42,9 @@ app.use("/api/admin",adminRoutes);
 app.use("/api/notifications",notificationRoutes);
 app.use("/api/reminders",reminderRoutes);
 app.use("/uploads",express.static(path.join(__dirname,"../uploads")));
+app.get("/metrics",async(req,res)=>{
+    res.set("Content-Type",register.contentType);
+    res.end(await register.metrics());
+})
 app.use(healthRoutes);
 export default app;
