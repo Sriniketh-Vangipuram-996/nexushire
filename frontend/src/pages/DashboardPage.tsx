@@ -47,7 +47,7 @@ const DashboardPage = () => {
 const fetchJobs = async () => {
     setError(""); // Clear previous errors
     try {
-        const res = await api.get("/api/jobs");
+        const res = await api.get("/jobs");
         setJobs(res.data);
     } catch (err) {
         if (axios.isAxiosError(err)) {
@@ -95,7 +95,7 @@ const fetchJobs = async () => {
   );
 
   try {
-    await api.patch(`/api/jobs/${id}/status`, {
+    await api.patch(`/jobs/${id}/status`, {
       status: newStatus,
     });
   } catch {
@@ -118,7 +118,7 @@ const fetchJobs = async () => {
     setIsModalOpen(false);
 
     try {
-      await api.delete(`/api/jobs/${jobToDelete}`);
+      await api.delete(`/jobs/${jobToDelete}`);
       toast.success("Deleted Successfully");
     } catch {
       //Rollback
@@ -157,7 +157,7 @@ const fetchJobs = async () => {
     );
 
     try{
-        await api.patch("/api/jobs/bulk/status",{
+        await api.patch("/jobs/bulk/status",{
             jobIds:selectedJobs,
             status:bulkStatus,
         });
@@ -199,7 +199,7 @@ const fetchJobs = async () => {
 
     setSelectedJobs([]);
     try{
-        await api.delete("/api/jobs/bulk",{
+        await api.delete("/jobs/bulk",{
             data:{jobIds:selectedJobs},//axios delete with body needs {data:{...}}
         });
     }

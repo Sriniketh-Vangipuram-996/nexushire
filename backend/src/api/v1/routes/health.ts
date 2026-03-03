@@ -1,7 +1,7 @@
 import Router from "express";
 import mongoose, { mongo } from "mongoose";
-import { publisher } from "../common/utils/redisPubSub";
-import { emailQueue } from "../queues/emailQueue";
+import { publisher } from "../../../utils/redisPubSub";
+import { emailQueue } from "../../../queues/emailQueue";
 
 
 const router=Router();

@@ -1,7 +1,7 @@
 import express from "express";
 import { scheduleReminder,cancelRemainder,getUserReminders,snoozeReminder } from "../controllers/reminderController";
-import { protect } from "../common/middleware/protect";
-import { cache } from "../common/middleware/cacheMiddleware";
+import { protect } from "../../../middleware/protect";
+import { cache } from "../../../middleware/cacheMiddleware";
 
 const router = express.Router();
 

@@ -68,7 +68,7 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/api/admin/users?search=${search}`, {
+      const res = await api.get(`/admin/users?search=${search}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data.users);
@@ -83,7 +83,7 @@ const AdminDashboard = () => {
   // Fetch stats
   const fetchStats = async () => {
     try {
-      const res = await api.get("/api/admin/stats", {
+      const res = await api.get("/admin/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStats(res.data);
@@ -104,7 +104,7 @@ const AdminDashboard = () => {
   // Toggle user active/suspended
   const toggleUser = async (id: string) => {
     try {
-      await api.patch(`/api/admin/users/${id}/toggle`, {}, {
+      await api.patch(`/admin/users/${id}/toggle`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchUsers();
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
   const deleteUser = async (id: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
     try {
-      await api.delete(`/api/admin/users/${id}`, {
+      await api.delete(`/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchUsers();
@@ -144,7 +144,7 @@ const AdminDashboard = () => {
   const bulkDelete = async () => {
     if (!confirm(`Delete ${selectedUsers.length} selected users?`)) return;
     for (const id of selectedUsers) {
-      await api.delete(`/api/admin/users/${id}`, {
+      await api.delete(`/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
     }
@@ -155,7 +155,7 @@ const AdminDashboard = () => {
 
   const bulkToggle = async () => {
     for (const id of selectedUsers) {
-      await api.patch(`/api/admin/users/${id}/toggle`, {}, {
+      await api.patch(`/admin/users/${id}/toggle`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
     }
@@ -173,11 +173,11 @@ const AdminDashboard = () => {
    
   const fetchReminderMonitoring=async()=>{
     try{
-      const failedRes=await api.get<FailedReminder[]>("/api/admin/reminders/failed",{
+      const failedRes=await api.get<FailedReminder[]>("/admin/reminders/failed",{
         headers:{Authorization:`Bearer${token}`},
       });
 
-      const statsRes=await api.get<ReminderStats>("/api/admin/reminders/health",{
+      const statsRes=await api.get<ReminderStats>("/admin/reminders/health",{
         headers:{Authorization:`Bearer ${token}`},
       });
       setFailedReminders(failedRes.data);
@@ -190,7 +190,7 @@ const AdminDashboard = () => {
 
   const retryReminder = async (id: string) => {
   try {
-    await api.post(`/api/admin/reminders/${id}/retry`, {}, {
+    await api.post(`/admin/reminders/${id}/retry`, {}, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

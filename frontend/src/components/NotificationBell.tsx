@@ -14,12 +14,12 @@ export default function NotificationBell() {
   const navigate=useNavigate();
 
   const fetchNotifications = async () => {
-    const res = await api.get("/api/notifications");
+    const res = await api.get("/notifications");
     setNotifications(res.data);
   };
 
   const markRead = async (id: string) => {
-  await api.patch(`/api/notifications/${id}/read`);
+  await api.patch(`/notifications/${id}/read`);
 
   setNotifications((prev) =>
     prev.map((n) =>

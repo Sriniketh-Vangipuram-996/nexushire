@@ -19,7 +19,7 @@ export default function Navbar({ toggleSidebar }: Props) {
   const navigate = useNavigate();
 
   const fetchNotifications = async () => {
-    const res = await api.get("/api/notifications");
+    const res = await api.get("/notifications");
     setNotifications(res.data);
   };
 

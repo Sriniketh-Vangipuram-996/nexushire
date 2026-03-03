@@ -1,4 +1,4 @@
-import { logger } from "../common/utils/logger";
+import { logger } from "../utils/logger";
 
 export const errorHandler = (
   err: any,

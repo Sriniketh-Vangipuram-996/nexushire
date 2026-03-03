@@ -6,8 +6,8 @@ import {
   deleteResume,
 } from "../controllers/resumeController";
 
-import {protect} from "../../../common/middleware/protect";
-import {uploadResume as upload} from "../../../common/utils/upload";
+import {protect} from "../../../middleware/protect";
+import {uploadResume as upload} from "../../../utils/upload";
 
 const router = express.Router();
 

@@ -15,7 +15,7 @@ export const useNotificationStore=create<NotificationStore>((set)=>({
 
     fetchUnreadCount:async()=>{
         try{
-            const res=await api.get("/api/notifications/unread-count");
+            const res=await api.get("/notifications/unread-count");
             set({unreadCount:res.data.count});
         }
         catch(err){

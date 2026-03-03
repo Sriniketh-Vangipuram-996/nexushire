@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
-import JobApplication from "../common/models/JobApplication";
+import JobApplication from "../../../models/JobApplication";
 import mongoose from "mongoose";
-import Resume from "../common/models/Resume";
-import { trackEvent } from "../common/utils/trackEvent";
-import { emailQueue } from "../queues/emailQueue";
-import Reminder from "../common/models/Reminder";
-import User from "../common/models/User";
-import { extractResumeText } from "../common/utils/extractResumeText";
-import { publisher } from "../common/utils/redisPubSub";
-import { logger } from "../common/utils/logger";
+import Resume from "../../../models/Resume";
+import { trackEvent } from "../../../utils/trackEvent";
+import { emailQueue } from "../../../queues/emailQueue";
+import Reminder from "../../../models/Reminder";
+import User from "../../../models/User";
+import { extractResumeText } from "../../../utils/extractResumeText";
+import { publisher } from "../../../utils/redisPubSub";
+import { logger } from "../../../utils/logger";
 
 export const createJobApplication = async (req: Request, res: Response) => {
   try {

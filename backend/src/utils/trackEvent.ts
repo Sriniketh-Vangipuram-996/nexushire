@@ -1,4 +1,4 @@
-import Event from "../models/Event";
+import Event from "../../models/Event";
 
 /**
  * Tracks a user event

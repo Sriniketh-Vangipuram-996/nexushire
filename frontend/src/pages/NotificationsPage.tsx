@@ -15,10 +15,10 @@ export const  NotificationsPage=()=>{
 
     useEffect(()=>{
         const loadData=async()=>{
-            await api.patch("/api/notifications/mark-all-read");
+            await api.patch("/notifications/mark-all-read");
             resetUnreadCount();
 
-            const res=await api.get("/api/notifications");
+            const res=await api.get("/notifications");
             setNotifications(res.data);
         };
         loadData();

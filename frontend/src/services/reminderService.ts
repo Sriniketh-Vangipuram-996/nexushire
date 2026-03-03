@@ -2,11 +2,11 @@ import api from "../lib/axios";
 
 
 export const getReminders=()=>
-    api.get("/api/reminders/");
+    api.get("/reminders/");
 export const cancelReminder=(id:string)=>
-    api.delete(`/api/reminders/${id}/`);
+    api.delete(`/reminders/${id}/`);
 
 export const createReminder=(data:{
     jobId:string;
     reminderDate:string;
-})=>api.post("/api/reminders/",data);
+})=>api.post("/reminders/",data);

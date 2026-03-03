@@ -8,7 +8,7 @@
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": ["./node_modules/@types", "src/api/v1/types"]
   },
   "include": ["src/**/*","tests/**/*"],
 }

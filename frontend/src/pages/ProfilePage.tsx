@@ -31,7 +31,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchResumes = async () => {
       try {
-        const res = await api.get("/api/resumes");
+        const res = await api.get("/resumes");
         setResumes(res.data);
       } catch {
         toast.error("Failed to fetch resumes");
@@ -54,7 +54,7 @@ const ProfilePage = () => {
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
-      const res = await api.put("/api/user/profile", form);
+      const res = await api.put("/user/profile", form);
       setUser(res.data.user);
       toast.success("Profile updated");
     } catch {
@@ -74,7 +74,7 @@ const ProfilePage = () => {
       const formData = new FormData();
       formData.append("avatar", avatarFile);
 
-      const res = await api.post("/api/user/avatar", formData, {
+      const res = await api.post("/user/avatar", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -96,7 +96,7 @@ const ProfilePage = () => {
       const formData = new FormData();
       formData.append("resume", resumeFile);
 
-      const res = await api.post("/api/resumes", formData);
+      const res = await api.post("/resumes", formData);
       setResumes((prev) => [res.data, ...prev]);
 
       toast.success("Resume uploaded");
@@ -113,7 +113,7 @@ const ProfilePage = () => {
     const previousResumes=[...resumes];
     setResumes((prev) => prev.filter((r) => r._id !== id));
     try {
-      await api.delete(`/api/resumes/${id}`);
+      await api.delete(`/resumes/${id}`);
       toast.success("Resume deleted");
     } catch {
       setResumes(previousResumes);
@@ -126,7 +126,7 @@ const ProfilePage = () => {
   ================================= */
   const setDefaultResume = async (id: string) => {
     try {
-      const res = await api.put(`/api/resumes/${id}/default`);
+      const res = await api.put(`/resumes/${id}/default`);
       setResumes(res.data);
       toast.success("Default resume updated");
     } catch {

@@ -9,7 +9,7 @@ const ForgotPasswordPage=()=>{
         e.preventDefault();
 
         try{
-        await api.post("/api/auth/request-password-reset",{
+        await api.post("/auth/request-password-reset",{
             email,
         });
 

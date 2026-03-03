@@ -8,7 +8,7 @@ export const trackEvent = async (
     const token = localStorage.getItem("token");
 
     await api.post(
-      "/api/events",
+      "/events",
       { eventType, metadata },
       {
         headers: {

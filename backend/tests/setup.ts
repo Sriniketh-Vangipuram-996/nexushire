@@ -16,7 +16,7 @@ afterAll(async () => {
   await mongo.stop();
 
   //close Redis 
-  const {redisClient}=await import("../src/common/middleware/rateLimiter");
+  const {redisClient}=await import("../src/middleware/rateLimiter");
   if(redisClient){
     await redisClient.quit();
   }

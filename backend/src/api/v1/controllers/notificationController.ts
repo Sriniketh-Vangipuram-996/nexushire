@@ -1,4 +1,4 @@
-import Notification from "../common/models/Notification";
+import Notification from "../../../models/Notification";
 import {Request,Response} from "express";
 
 export const getNotifications = async (req:Request, res:Response) => {

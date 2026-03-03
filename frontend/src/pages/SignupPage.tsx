@@ -26,7 +26,7 @@ export  const  SignupPage=()=>{
 
         try{
             setIsLoading(true);
-            await api.post("/api/auth/signup",{
+            await api.post("/auth/signup",{
                 email,
                 password
             },

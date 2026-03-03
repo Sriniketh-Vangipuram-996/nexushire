@@ -1,6 +1,6 @@
-import User from "../common/models/User";
-import JobApplication from "../common/models/JobApplication";
-import Reminder from "../common/models/Reminder";
+import User from "../models/User";
+import JobApplication from "../models/JobApplication";
+import Reminder from "../models/Reminder";
 import { transporter } from "../config/email";
 import { weeklySummaryTemplate } from "../common/utils/weeklySummaryTemplate";
 import { publisher } from "../common/utils/redisPubSub";

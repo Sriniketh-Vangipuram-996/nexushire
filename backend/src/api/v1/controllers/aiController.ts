@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import Resume from "../../../common/models/Resume";
-import JobApplication from "../../../common/models/JobApplication";
-import { logger } from "../../../common/utils/logger";
+import Resume from "../../../models/Resume";
+import JobApplication from "../../../models/JobApplication";
+import { logger } from "../../../utils/logger";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 

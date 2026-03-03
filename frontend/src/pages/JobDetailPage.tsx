@@ -21,7 +21,7 @@ const JobDetailPage=()=>{
     useEffect(()=>{
         const fetchJob=async()=>{
             try{
-                const res=await api.get(`/api/jobs/${id}`);
+                const res=await api.get(`/jobs/${id}`);
                 setJob(res.data);
             }
             catch(err){

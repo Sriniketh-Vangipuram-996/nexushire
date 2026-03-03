@@ -54,7 +54,7 @@ const DashboardAnalytics = () => {
       const token = localStorage.getItem("token");
 
       const res = await api.get(
-        `/api/analytics/dashboard?range=${range}&role=${appliedRole}`,
+        `/analytics/dashboard?range=${range}&role=${appliedRole}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

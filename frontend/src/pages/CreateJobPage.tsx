@@ -26,7 +26,7 @@ const CreateJobPage=()=>{
         e.preventDefault();
 
         try{
-            await api.post("/api/jobs",form);
+            await api.post("/jobs",form);
             navigate("/dashboard");
         }catch(err){
             if(axios.isAxiosError(err)){

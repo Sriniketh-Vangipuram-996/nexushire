@@ -32,7 +32,7 @@ const LoginPage=()=>{
 
         try{
             setLoading(true);
-            await api.post("/api/auth/login",{
+            await api.post("/auth/login",{
                 email,password
             }
             );

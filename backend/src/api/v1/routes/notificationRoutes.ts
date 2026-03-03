@@ -1,12 +1,12 @@
 import express from "express";
-import { protect } from "../common/middleware/protect";
+import { protect } from "../../../middleware/protect";
 import {
   getNotifications,
   markAsRead,
   getUnreadCount,
   markAllRead,
 } from "../controllers/notificationController";
-import { cache } from "../common/middleware/cacheMiddleware";
+import { cache } from "../../../middleware/cacheMiddleware";
 
 const router = express.Router();
 

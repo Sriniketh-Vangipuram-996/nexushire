@@ -1,4 +1,4 @@
-import AuditLog from "../common/models/AuditLog";
+import AuditLog from "../models/AuditLog";
 
 interface AuditParams {
   actorId: string;

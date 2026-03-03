@@ -3,12 +3,12 @@ dotenv.config();
 
 import { Worker, Job } from "bullmq";
 import { transporter } from "../config/email";
-import Reminder from "../common/models/Reminder";
-import Notification from "../common/models/Notification";
-import { remainderTemplate } from "../common/utils/emailTemplates";
-import { publisher } from "../common/utils/redisPubSub";
+import Reminder from "../models/Reminder";
+import Notification from "../models/Notification";
+import { remainderTemplate } from "../utils/emailTemplates";
+import { publisher } from "../utils/redisPubSub";
 import connectDB from "../config/db";
-import { logger } from "../common/utils/logger";
+import { logger } from "../utils/logger";
 import { createAuditLog } from "../services/auditService";
 
 interface ReminderJobData {

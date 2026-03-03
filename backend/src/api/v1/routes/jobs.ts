@@ -11,11 +11,11 @@ import {
   deleteJobResume,
   uploadResumeToJob
 } from "../controllers/jobController";
-import { protect } from "../common/middleware/protect";
-import { uploadResume as uploadResumeMulter } from "../common/utils/upload";
-import { cache } from "../common/middleware/cacheMiddleware";
-import { tokenBucketLimiter } from "../common/middleware/tokenBucketLimiter";
-import { tenantSlidingLimiter } from "../common/middleware/tenantLimiter";
+import { protect } from "../../../middleware/protect";
+import { uploadResume as uploadResumeMulter } from "../../../utils/upload";
+import { cache } from "../../../middleware/cacheMiddleware";
+import { tokenBucketLimiter } from "../../../middleware/tokenBucketLimiter";
+import { tenantSlidingLimiter } from "../../../middleware/tenantLimiter";
 
 
 const router = express.Router();

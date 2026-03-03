@@ -1,5 +1,5 @@
 import { Request,Response,NextFunction } from "express";
-import { FeatureFlagService } from "../../services/featureFlag.service";
+import { FeatureFlagService } from "../services/featureFlag.service";
 
 export const requireFeature=(key:string)=>{
     return async(req:Request,res:Response,next:NextFunction)=>{

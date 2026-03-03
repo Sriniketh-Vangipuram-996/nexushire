@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import Reminder from "../common/models/Reminder";
-import JobApplication from "../common/models/JobApplication";
-import { emailQueue } from "../queues/emailQueue";
-import { createAuditLog } from "../services/auditService";
-import { deleteCacheByPattern } from "../common/utils/cache";
+import Reminder from "../../../models/Reminder";
+import JobApplication from "../../../models/JobApplication";
+import { emailQueue } from "../../../queues/emailQueue";
+import { createAuditLog } from "../../../services/auditService";
+import { deleteCacheByPattern } from "../../../utils/cache";
 
 
 export const scheduleReminder = async (req: Request, res: Response) => {

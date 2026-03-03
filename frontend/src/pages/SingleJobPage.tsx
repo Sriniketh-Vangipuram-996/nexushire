@@ -29,7 +29,7 @@ const SingleJobPage = () => {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const res = await api.get(`/api/jobs/${id}`);
+        const res = await api.get(`/jobs/${id}`);
         setJob(res.data);
       } catch {
         toast.error("Failed to load job");
@@ -45,7 +45,7 @@ const SingleJobPage = () => {
   useEffect(() => {
     const fetchResumes = async () => {
       try {
-        const res = await api.get("/api/resumes");
+        const res = await api.get("/resumes");
         setResumes(res.data);
       } catch {
         toast.error("Failed to load resumes");
@@ -71,14 +71,14 @@ const SingleJobPage = () => {
     try {
       // Analyze each selected resume one by one
       for (const resumeId of selectedResumeIds) {
-        await api.post("/api/ai/analyze", {
+        await api.post("/ai/analyze", {
           jobId: job._id,
           resumeId,
         });
       }
 
       // Fetch updated job with new comparisons
-      const updatedJob = await api.get(`/api/jobs/${job._id}`);
+      const updatedJob = await api.get(`/jobs/${job._id}`);
       setJob(updatedJob.data);
       toast.success("Analysis complete for all selected resumes");
     } catch {

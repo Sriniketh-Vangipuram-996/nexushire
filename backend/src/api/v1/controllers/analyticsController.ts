@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import JobApplication from "../common/models/JobApplication";
-import { logger } from "../common/utils/logger";
+import JobApplication from "../../../models/JobApplication";
+import { logger } from "../../../utils/logger";
 
 export const getDashboardAnalytics = async (
   req: Request,

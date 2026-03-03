@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             });
         } 
         else {
-            const res = await api.get("/api/auth/me");
+            const res = await api.get("/auth/me");
             set({
             isAuthenticated: true,
             user: res.data.user,
@@ -57,7 +57,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     logout: async () => {
         try {
-            await api.post("/api/auth/logout");
+            await api.post("/auth/logout");
         } catch {
             console.error("Logout failed");
         }
@@ -71,7 +71,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     checkAuth: async () => {
         try {
-            const res = await api.post("/api/auth/refresh",{}, { withCredentials: true });
+            const res = await api.post("/auth/refresh",{}, { withCredentials: true });
 
             set({
                 isAuthenticated: true,

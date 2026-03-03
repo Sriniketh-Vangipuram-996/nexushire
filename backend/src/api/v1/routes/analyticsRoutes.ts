@@ -1,8 +1,8 @@
 import express from "express";
 import { getDashboardAnalytics } from "../controllers/analyticsController";
-import { protect } from "../common/middleware/protect";
-import { cache } from "../common/middleware/cacheMiddleware";
-import { tokenBucketLimiter } from "../common/middleware/tokenBucketLimiter";
+import { protect } from "../../../middleware/protect";
+import { cache } from "../../../middleware/cacheMiddleware";
+import { tokenBucketLimiter } from "../../../middleware/tokenBucketLimiter";
 
 const router = express.Router();
 

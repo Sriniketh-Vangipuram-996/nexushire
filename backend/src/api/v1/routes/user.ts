@@ -1,12 +1,12 @@
 import { uploadResume as uploadResumeController } from "../controllers/userController";
-import { protect } from "../../../common/middleware/protect";
+import { protect } from "../../../middleware/protect";
 import express from "express";
-import User from "../../../common/models/User";
-import { uploadResume as uploadResumeMulter,uploadAvatar } from "../../../common/utils/upload";
-import { authorize } from "../../../common/middleware/authorize";
-import { Role } from "../../../common/models/User";
-import { logger } from "../../../common/utils/logger";
-import { optimizeAvatarMiddleware } from "../../../common/middleware/optimizeImageMiddleware";
+import User from "../../../models/User";
+import { uploadResume as uploadResumeMulter,uploadAvatar } from "../../../utils/upload";
+import { authorize } from "../../../middleware/authorize";
+import { Role } from "../../../models/User";
+import { logger } from "../../../utils/logger";
+import { optimizeAvatarMiddleware } from "../../../middleware/optimizeImageMiddleware";
 
 const router=express.Router();
 router.use(protect,authorize(Role.USER));
