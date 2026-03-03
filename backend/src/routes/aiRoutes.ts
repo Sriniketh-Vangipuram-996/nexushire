@@ -1,7 +1,7 @@
 import express from "express";
-import { protect } from "../middleware/protect";
+import { protect } from "../common/middleware/protect";
 import { analyzeResumeMatch } from "../controllers/aiController";
-import { requireFeature } from "../middleware/featureFlag.middlware";
+import { requireFeature } from "../common/middleware/featureFlag.middlware";
 
 const router = express.Router();
 

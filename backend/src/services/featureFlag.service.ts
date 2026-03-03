@@ -1,4 +1,4 @@
-import FeatureFlag from "../models/FeatureFlag";
+import FeatureFlag from "../common/models/FeatureFlag";
 
 export class FeatureFlagService{
     static async isEnabled(key:string):Promise<boolean>{

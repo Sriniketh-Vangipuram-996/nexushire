@@ -1,5 +1,5 @@
 import "express";
-import { logger } from "../../utils/logger";
+import { logger } from "../../common/utils/logger";
 
 declare global {
   namespace Express {

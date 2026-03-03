@@ -1,14 +1,14 @@
 import { Request,Response } from "express";
 import * as bcrypt from "bcryptjs";
-import User from "../models/User";
+import User from "../common/models/User";
 import jwt from "jsonwebtoken";
-import { AuthRequest } from "../middleware/auth";
-import { signAccessToken,signRefreshToken } from "../utils/jwt";
-import { signEmailToken } from "../utils/emailToken";
-import { sendVerificationEmail } from "../utils/sendEmail";
-import { signResetToken } from "../utils/resetToken";
-import { sendResetPasswordEmail } from "../utils/sendResetEmail";
-import { Tenant } from "../models/Tenant";
+import { AuthRequest } from "../common/middleware/auth";
+import { signAccessToken,signRefreshToken } from "../common/utils/jwt";
+import { signEmailToken } from "../common/utils/emailToken";
+import { sendVerificationEmail } from "../common/utils/sendEmail";
+import { signResetToken } from "../common/utils/resetToken";
+import { sendResetPasswordEmail } from "../common/utils/sendResetEmail";
+import { Tenant } from "../common/models/Tenant";
 import { createAuditLog } from "../services/auditService";
 
 

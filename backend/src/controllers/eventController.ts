@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import Event from "../models/Event";
-import { logger } from "../utils/logger";
+import Event from "../common/models/Event";
+import { logger } from "../common/utils/logger";
 
 export const trackEvent = async (req: Request, res: Response) => {
   try {

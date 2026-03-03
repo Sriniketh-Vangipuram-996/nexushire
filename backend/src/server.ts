@@ -7,12 +7,12 @@ import { connectRedis } from "./config/redis";
 import { registerRecurringJobs } from "./queues/registerRecurringJobs";
 import http from "http";
 import { initSocket } from "./socket";
-import { connectPubSub, subscriber } from "./utils/redisPubSub";
+import { connectPubSub, subscriber } from "./common/utils/redisPubSub";
 import { getIO } from "./socket";
-import Notification from "./models/Notification";
-import { logger } from "./utils/logger";
+import Notification from "./common/models/Notification";
+import { logger } from "./common/utils/logger";
 import { setupQueueDashboard } from "./queues/queueMonitor";
-import FeatureFlag from "./models/FeatureFlag";
+import FeatureFlag from "./common/models/FeatureFlag";
 
 const PORT = process.env.PORT || 5000;
 const isTest=process.env.NODE_ENV==="test";

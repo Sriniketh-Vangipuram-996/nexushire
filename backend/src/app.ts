@@ -13,10 +13,12 @@ import adminRoutes from "../src/routes/admin";
 import notificationRoutes from "../src/routes/notificationRoutes";
 import reminderRoutes from "../src/routes/reminderRoutes";
 import healthRoutes from "./routes/health"
-import { httpLogger } from "./middleware/logger";
-import { requestIdMiddleware } from "./middleware/requestId";
-import { requestLogger } from "./middleware/requestLogger";
-import { globalRateLimiter } from "./middleware/rateLimiter";
+import { httpLogger } from "./common/middleware/logger";
+import { requestIdMiddleware } from "./common/middleware/requestId";
+import { requestLogger } from "./common/middleware/requestLogger";
+import { globalRateLimiter } from "./common/middleware/rateLimiter";
+import v1Routes from "./api/v1";
+import v2Routes from "./api/v2";
 
 const app=express();
 
@@ -28,6 +30,9 @@ app.use(requestIdMiddleware);
 app.use(requestLogger);
 app.use(globalRateLimiter); // Apply global rate limiter to all routes
 //Routes..
+
+app.use("/api/v1",v1Routes);
+app.use("/api/v2",v2Routes);
 app.use("/api/auth",authRoutes);
 app.use("/api/jobs",jobRoutes);
 app.use("/api/user", userRoutes); 

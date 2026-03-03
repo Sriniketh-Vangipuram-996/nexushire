@@ -1,11 +1,11 @@
-import Resume from "../models/Resume";
+import Resume from "../common/models/Resume";
 import fs from "fs";
 import path from "path";
 import { Request, Response } from "express";
-import { extractResumeText } from "../utils/extractResumeText";
-import JobApplication from "../models/JobApplication";
+import { extractResumeText } from "../common/utils/extractResumeText";
+import JobApplication from "../common/models/JobApplication";
 import { notificationQueue } from "../queues/notificationQueue";
-import { logger } from "../utils/logger";
+import { logger } from "../common/utils/logger";
 
 
 export const uploadResume = async (req: Request, res: Response) => {

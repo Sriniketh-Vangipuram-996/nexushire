@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
-import User from "../models/User";
-import JobApplication from "../models/JobApplication";
-import Event from "../models/Event";
-import Reminder from "../models/Reminder";
+import User from "../common/models/User";
+import JobApplication from "../common/models/JobApplication";
+import Event from "../common/models/Event";
+import Reminder from "../common/models/Reminder";
 import { emailQueue } from "../queues/emailQueue";
-import { scopedQuery } from "../utils/scopedQuery";
+import { scopedQuery } from "../common/utils/scopedQuery";
 import { id } from "zod/locales";
-import { AuthRequest } from "../middleware/auth";
-import { logger } from "../utils/logger";
-import AuditLog from "../models/AuditLog";
+import { AuthRequest } from "../common/middleware/auth";
+import { logger } from "../common/utils/logger";
+import AuditLog from "../common/models/AuditLog";
 
 
 export const getUserDetails = async (req: Request, res: Response) => {

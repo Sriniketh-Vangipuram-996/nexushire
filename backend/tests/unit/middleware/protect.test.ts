@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { protect } from "../../../src/middleware/protect";
+import { protect } from "../../../src/common/middleware/protect";
 
 jest.mock("jsonwebtoken");
 

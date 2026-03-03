@@ -1,6 +1,6 @@
 import express from "express";
 import { trackEvent } from "../controllers/eventController";
-import { protect } from "../middleware/protect";
+import { protect } from "../common/middleware/protect";
 
 const router = express.Router();
 

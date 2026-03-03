@@ -1,6 +1,6 @@
 import express from "express";
-import { protect } from "../middleware/protect";
-import { adminOnly } from "../middleware/adminMiddleware";
+import { protect } from "../common/middleware/protect";
+import { adminOnly } from "../common/middleware/adminMiddleware";
 import {
   getAllUsers,
   getUserDetails,
@@ -14,9 +14,9 @@ import {
   getReminderHealthStats,
   getAuditLogs
 } from "../controllers/adminController";
-import { authorize } from "../middleware/authorize";
-import { Role } from "../models/User";
-import { enforceTenant } from "../middleware/tenant";
+import { authorize } from "../common/middleware/authorize";
+import { Role } from "../common/models/User";
+import { enforceTenant } from "../common/middleware/tenant";
 
 const router = express.Router();
 

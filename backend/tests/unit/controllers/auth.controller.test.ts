@@ -1,6 +1,6 @@
 import { signup } from "../../../src/controllers/authController";
-import User from "../../../src/models/User";
-import { Tenant } from "../../../src/models/Tenant";
+import User from "../../../src/common/models/User";
+import { Tenant } from "../../../src/common/models/Tenant";
 import bcrypt from "bcryptjs";
 
 jest.mock("../../../src/models/User");

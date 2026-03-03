@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import Redis from "ioredis";
-import { logger } from "./utils/logger";
+import { logger } from "./common/utils/logger";
 
 let io: Server;
 

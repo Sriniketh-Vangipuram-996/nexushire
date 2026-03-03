@@ -1,4 +1,4 @@
-import User from "../models/User";
+import User from "../common/models/User";
 
 export const uploadResume=async(req:any,res:any)=>{
     try{

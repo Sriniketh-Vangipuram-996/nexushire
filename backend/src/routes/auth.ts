@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { signup,login,logout,verifyEmail,refresh,requestPasswordReset,resetPassword,me} from "../controllers/authController";
-import { requireAuth } from "../middleware/auth";
-import { validate } from "../middleware/validate";
+import { requireAuth } from "../common/middleware/auth";
+import { validate } from "../common/middleware/validate";
 import { loginSchema,registerSchema } from "../validators/auth.validator";
-import { protect } from "../middleware/protect";
-import { authRateLimiter, strictRateLimiter } from "../middleware/rateLimiter";
-import { slidingWindowLimiter } from "../middleware/slidingWindowLimiter";
+import { protect } from "../common/middleware/protect";
+import { authRateLimiter, strictRateLimiter } from "../common/middleware/rateLimiter";
+import { slidingWindowLimiter } from "../common/middleware/slidingWindowLimiter";
 
 const router = Router();
 

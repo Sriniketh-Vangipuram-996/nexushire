@@ -1,7 +1,7 @@
 import {Worker} from "bullmq";
-import Notification from "../models/Notification";
+import Notification from "../common/models/Notification";
 import dotenv from "dotenv";
-import { logger } from "../utils/logger";
+import { logger } from "../common/utils/logger";
 
 dotenv.config();
 new Worker(

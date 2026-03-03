@@ -1,5 +1,5 @@
 import {Request,Response,NextFunction}from "express";
-import { buildCacheKey,getCache,setCache } from "../utils/cache";
+import { buildCacheKey,getCache,setCache } from "../common/utils/cache";
 import { success } from "zod";
 
 export function cache(ttl:number){

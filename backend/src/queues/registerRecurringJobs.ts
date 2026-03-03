@@ -1,5 +1,5 @@
 import { emailQueue } from "./emailQueue";
-import { logger } from "../utils/logger";
+import { logger } from "../common/utils/logger";
 
 export const registerRecurringJobs = async () => {
   try {

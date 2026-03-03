@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import mammoth from "mammoth";
-import { logger } from "../utils/logger";
+import { logger } from "./logger";
 
 import pdfParse from "pdf-parse";
 export const extractResumeText = async (filePath: string): Promise<string> => {
