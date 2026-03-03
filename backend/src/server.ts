@@ -6,17 +6,13 @@ import connectDB from "./config/db";
 import { connectRedis } from "./config/redis";
 import { registerRecurringJobs } from "./queues/registerRecurringJobs";
 import http from "http";
-import { createBullBoard } from "@bull-board/api";
-import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
-import { ExpressAdapter } from "@bull-board/express";
-import { emailQueue } from "./queues/emailQueue";
-import { protect } from "./middleware/protect";
-import { adminOnly } from "./middleware/adminMiddleware";
 import { initSocket } from "./socket";
 import { connectPubSub, subscriber } from "./utils/redisPubSub";
 import { getIO } from "./socket";
 import Notification from "./models/Notification";
 import { logger } from "./utils/logger";
+import { setupQueueDashboard } from "./queues/queueMonitor";
+
 
 const PORT = process.env.PORT || 5000;
 const isTest=process.env.NODE_ENV==="test";
@@ -77,20 +73,7 @@ subscriber.on("message", async (channel: string, message: string) => {
       .then(() => console.log("✅ Recurring jobs registered"))
       .catch(err => console.error("Recurring jobs error:", err));
 
-    const serverAdapter = new ExpressAdapter();
-    serverAdapter.setBasePath("/admin/queues");
-
-    createBullBoard({
-      queues: [new BullMQAdapter(emailQueue)],
-      serverAdapter,
-    });
-
-    app.use(
-      "/admin/queues",
-      protect,
-      adminOnly,
-      serverAdapter.getRouter()
-    );
+      setupQueueDashboard(app);
 
     server.listen(PORT, () => {
       logger.info(`🚀 Server running on port ${PORT}`);
