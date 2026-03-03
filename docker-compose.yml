@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: nexushire-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env.production
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:7
+    container_name: nexushire-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7
+    container_name: nexushire-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongo_data:
