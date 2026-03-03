@@ -12,7 +12,7 @@ import { getIO } from "./socket";
 import Notification from "./models/Notification";
 import { logger } from "./utils/logger";
 import { setupQueueDashboard } from "./queues/queueMonitor";
-
+import FeatureFlag from "./models/FeatureFlag";
 
 const PORT = process.env.PORT || 5000;
 const isTest=process.env.NODE_ENV==="test";
@@ -68,7 +68,11 @@ subscriber.on("message", async (channel: string, message: string) => {
     getIO().to("admin-room").emit("admin-alert", data);
   }
 });
-
+    await FeatureFlag.updateOne({
+      key:"AI_RESUME"
+    },{enabled:true},
+    {upsert:true}
+  );
     await registerRecurringJobs()
       .then(() => console.log("✅ Recurring jobs registered"))
       .catch(err => console.error("Recurring jobs error:", err));
