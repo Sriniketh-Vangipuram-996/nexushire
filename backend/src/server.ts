@@ -13,6 +13,7 @@ import Notification from "./models/Notification";
 import { logger } from "./utils/logger";
 import { setupQueueDashboard } from "./queues/queueMonitor";
 import FeatureFlag from "./models/FeatureFlag";
+import { restoreReminderJobs } from "./queues/restoreReminderJobs";
 
 const PORT = process.env.PORT || 5000;
 const isTest=process.env.NODE_ENV==="test";
@@ -27,6 +28,8 @@ async function start() {
     logger.info("Connecting to Redis...");
     await connectRedis();
     logger.info("Redis connected");
+    await restoreReminderJobs();
+    logger.info("Reminder jobs restored");
     logger.info("Initializing socket server");
     await initSocket(server);
     logger.info("Done initializing socket server");

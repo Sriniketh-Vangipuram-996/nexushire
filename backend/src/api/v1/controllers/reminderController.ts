@@ -40,22 +40,27 @@ export const scheduleReminder = async (req: Request, res: Response) => {
       `nexushire:*:*:${req.user.tenantId}:${userId}:/reminders`
     )
 
+    // scheduleReminder
     const bullJob = await emailQueue.add(
-      "jobReminder",
+      "sendReminder",
       {
-        to:userEmail,
-        jobTitle:job.role,
-        company:job.companyName,
-        reminderId:reminder._id.toString(),
-        userId:userId.toString(),
+        reminderId: reminder._id.toString(),
+        userId,
+        to: userEmail,
+        jobTitle: job.role,
+        company: job.companyName,
       },
-      { delay, attempts: 3,backoff:{
-        type:"exponential",
-        delay:5000
-      },
-       removeOnComplete:true,
-       removeOnFail:false,
-    }
+      {
+        jobId: reminder._id.toString(), // unique & persistent
+        delay,
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      }
     );
 
     reminder.bullJobId = bullJob.id!;
@@ -84,6 +89,7 @@ export const scheduleReminder = async (req: Request, res: Response) => {
 
 
 export const cancelRemainder=async(req:Request,res:Response)=>{
+  console.log("🚨 CANCEL API HIT", req.params.id);
   const reminder=await Reminder.findById(req.params.id);
   if(!req.user){
     return res.status(401).json({message:"Unauthorized"});
@@ -124,67 +130,71 @@ export const getUserReminders=async(req:Request,res:Response)=>{
 }
 
 
-export const snoozeReminder=async(req:Request,res:Response)=>{
- try{
- const {id}=req.params;
- const {newDate}=req.body;
+export const snoozeReminder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { newDate } = req.body;
 
- const reminder=await Reminder.findOne({
-  _id:id,
-  user:req.user?.userId,
- });
+    const reminder = await Reminder.findOne({
+      _id: id,
+      user: req.user?.userId,
+    }).populate("job");
 
- if(!reminder){
-  return res.status(404).json({message:"Reminder Not Found."});
- }
+    if (!reminder) {
+      return res.status(404).json({ message: "Reminder not found" });
+    }
 
- if(reminder.status!=="scheduled"){
-  return res.status(400).json({message:"Only scheduled reminders can be snoozed."});
- }
+    if (reminder.status !== "scheduled") {
+      return res
+        .status(400)
+        .json({ message: "Only scheduled reminders can be snoozed" });
+    }
 
- //1] Remove old BullJobId
- if(reminder.bullJobId){
-    await emailQueue.remove(reminder.bullJobId);
- }
+    if (reminder.bullJobId) {
+      await emailQueue.remove(reminder.bullJobId);
+    }
 
- //2] Add new Delayed job
-  const delay=new Date(newDate).getTime()-Date.now();
+    const delay = new Date(newDate).getTime() - Date.now();
 
-  if(delay<=0){
-    return res.status(400).json({message:"Invalid snooze date"});
-  }
+    if (delay <= 0) {
+      return res.status(400).json({ message: "Invalid date" });
+    }
 
-  const job=await emailQueue.add(
-    "sendReminder",
-    {reminderId:reminder._id},
-    {delay}
-  );
+    const jobData = reminder.job as any;
 
-  if (!job.id) {
-  return res.status(500).json({ message: "Failed to schedule job" });
-}
+    const bullJob = await emailQueue.add(
+      "sendReminder",
+      {
+        to: reminder.email,
+        jobTitle: jobData.role,
+        company: jobData.companyName,
+        reminderId: reminder._id.toString(),
+        userId: req.user!.userId,
+      },
+      {
+        delay,
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 5000,
+        },
+      }
+    );
 
+    reminder.reminderDate = new Date(newDate);
+    reminder.bullJobId = bullJob.id!;
+    await reminder.save();
 
-  //2] update DB
-  reminder.reminderDate=newDate;
-  reminder.bullJobId=job.id;
-
-  await reminder.save();
-
-  if(!req.user){
-    return res.json({message:"User not found."});
-  }
-  //Invalidate all reminder cache for user
     await deleteCacheByPattern(
-      `nexushire:*:*:${req.user.tenantId}:${req.user.userId}:/reminders`
-    )
+      `nexushire:*:*:${req.user!.tenantId}:${req.user!.userId}:/reminders`
+    );
 
-
-  res.json({message:"Reminder snoozed successfully",reminder});
-}
-catch(error){
-  req.log?.info("Snooze error:");
-  req.log?.error(error);
-  res.status(500).json({message:"Server error"});
-}
-}
+    res.json({
+      message: "Reminder snoozed successfully",
+      reminder,
+    });
+  } catch (err) {
+    req.log?.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

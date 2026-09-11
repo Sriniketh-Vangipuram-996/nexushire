@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import api from "../lib/axios";
-import KpiCard from "../components/KpiCard";
 import axios from "axios";
-import { lazy,Suspense } from "react";
 import { toast } from "react-toastify";
+import KpiCard from "../components/KpiCard";
 
-const AdminCharts=lazy(()=>import("../components/AdminCharts"));
+const AdminCharts = lazy(() => import("../components/AdminCharts"));
 
 interface Job {
   _id: string;
@@ -31,355 +30,553 @@ interface Stats {
   eventBreakdown: { _id: string; count: number }[];
 }
 
-interface FailedReminder{
-  _id:string;
-  status:string;
-  failureReason:string;
-  retryCount:number;
-  bounceLog?:string;
-  failedAt:string;
-  user:{
-    name:string;
-    email:string;
+interface FailedReminder {
+  _id: string;
+  failureReason: string;
+  retryCount: number;
+  failedAt: string;
+  user: {
+    name: string;
+    email: string;
   };
-  job:{
-    companyName:string;
-    role:string;
+  job: {
+    companyName: string;
+    role: string;
   };
 }
+
 interface ReminderStats {
   total: number;
   sent: number;
   failed: number;
   totalRetries: number;
 }
+
 const AdminDashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+
   const [search, setSearch] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const[failedReminders,setFailedReminders]=useState<FailedReminder[]>([]);
-  const[reminderStats,setReminderStats]=useState<ReminderStats|null>(null);
 
-  const token = localStorage.getItem("token");
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingPage, setLoadingPage] = useState(true);
 
-  // Fetch users
-  const fetchUsers = async () => {
-    setLoading(true);
+  const [failedReminders, setFailedReminders] = useState<FailedReminder[]>([]);
+  const [reminderStats, setReminderStats] =
+    useState<ReminderStats | null>(null);
+
+  const fetchUsers = async (query = search) => {
     try {
-      const res = await api.get(`/admin/users?search=${search}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      setLoadingUsers(true);
+
+      const res = await api.get(`/admin/users?search=${query}`);
       setUsers(res.data.users);
     } catch (err) {
-      if(axios.isAxiosError(err))
-      toast.error("Failed to fetch users");
+      if (axios.isAxiosError(err))
+        toast.error("Failed to fetch users");
     } finally {
-      setLoading(false);
+      setLoadingUsers(false);
     }
   };
 
-  // Fetch stats
   const fetchStats = async () => {
-    try {
-      const res = await api.get("/admin/stats", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setStats(res.data);
-    } catch {
-      toast.error("Failed to fetch stats");
-    }
+    const res = await api.get("/admin/stats");
+    setStats(res.data);
+  };
+
+  const fetchReminderMonitoring = async () => {
+    const failed = await api.get("/admin/reminders/failed");
+    const health = await api.get("/admin/reminders/health");
+
+    setFailedReminders(failed.data);
+    setReminderStats(health.data);
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      await fetchUsers();
-      await fetchStats();
-      await fetchReminderMonitoring();
+    const load = async () => {
+      try {
+        await Promise.all([
+          fetchUsers(),
+          fetchStats(),
+          fetchReminderMonitoring(),
+        ]);
+      } catch {
+        toast.error("Failed to load dashboard");
+      } finally {
+        setLoadingPage(false);
+      }
     };
-    loadData();
+
+    load();
   }, []);
 
-  // Toggle user active/suspended
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchUsers(search);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const toggleUser = async (id: string) => {
     try {
-      await api.patch(`/admin/users/${id}/toggle`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.patch(`/admin/users/${id}/toggle`);
       fetchUsers();
-      toast.success("User status updated");
+      toast.success("Status updated");
     } catch {
-      toast.error("Failed to update status");
+      toast.error("Failed");
     }
   };
 
-  // Delete single user
   const deleteUser = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm("Delete this user?")) return;
+
     try {
-      await api.delete(`/admin/users/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/admin/users/${id}`);
       fetchUsers();
-      toast.success("User deleted");
+      toast.success("Deleted");
     } catch {
-      toast.error("Failed to delete user");
+      toast.error("Delete failed");
     }
   };
 
-  // Handle user selection
-  const handleSelectUser = (id: string) => {
-    setSelectedUsers((prev) =>
-      prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedUsers.length === users.length) setSelectedUsers([]);
-    else setSelectedUsers(users.map((u) => u._id));
-  };
-
-  // Bulk actions
-  const bulkDelete = async () => {
-    if (!confirm(`Delete ${selectedUsers.length} selected users?`)) return;
-    for (const id of selectedUsers) {
-      await api.delete(`/admin/users/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  const retryReminder = async (id: string) => {
+    try {
+      await api.post(`/admin/reminders/${id}/retry`);
+      fetchReminderMonitoring();
+      toast.success("Retry scheduled");
+    } catch {
+      toast.error("Retry failed");
     }
-    setSelectedUsers([]);
-    fetchUsers();
-    toast.success("Selected users deleted");
   };
 
   const bulkToggle = async () => {
-    for (const id of selectedUsers) {
-      await api.patch(`/admin/users/${id}/toggle`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    }
+    await Promise.all(
+      selectedUsers.map((id) =>
+        api.patch(`/admin/users/${id}/toggle`)
+      )
+    );
+
     setSelectedUsers([]);
     fetchUsers();
-    toast.success("Selected users updated");
   };
 
-  // Filtered users by search
+  const bulkDelete = async () => {
+    if (!window.confirm("Delete selected users?")) return;
+
+    await Promise.all(
+      selectedUsers.map((id) =>
+        api.delete(`/admin/users/${id}`)
+      )
+    );
+
+    setSelectedUsers([]);
+    fetchUsers();
+  };
+
   const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
+    (u) =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase())
   );
-   
-  const fetchReminderMonitoring=async()=>{
-    try{
-      const failedRes=await api.get<FailedReminder[]>("/admin/reminders/failed",{
-        headers:{Authorization:`Bearer${token}`},
-      });
 
-      const statsRes=await api.get<ReminderStats>("/admin/reminders/health",{
-        headers:{Authorization:`Bearer ${token}`},
-      });
-      setFailedReminders(failedRes.data);
-      setReminderStats(statsRes.data);
-    }
-    catch{
-      toast.error("Failed to fetch reminder monitoring data");
-    }
+  if (loadingPage || !stats) {
+    return (
+      <div className="flex h-[70vh] items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <p className="text-slate-500">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
   }
-
-  const retryReminder = async (id: string) => {
-  try {
-    await api.post(`/admin/reminders/${id}/retry`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    toast.success("Retry scheduled");
-    fetchReminderMonitoring();
-  } catch {
-    toast.error("Retry failed");
-  }
-};
-
-  if (!stats) return <div className="p-10">Loading...</div>;
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen space-y-10">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8 dark:bg-slate-950">
+      <div className="mx-auto max-w-7xl space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Admin Dashboard
+          </h1>
+          <p className="mt-1 text-slate-500">
+            Manage users, monitor activity and email reminders.
+          </p>
+        </div>
 
-      {/* KPI CARDS */}
-      <div className="grid grid-cols-4 gap-6">
-        <KpiCard title="Total Users" value={stats.totalUsers} color="bg-blue-500" />
-        <KpiCard title="Active Users" value={stats.activeUsers} color="bg-green-500" />
-        <KpiCard title="Total Jobs" value={stats.totalJobs} color="bg-purple-500" />
-        <KpiCard title="Total Events" value={stats.totalEvents} color="bg-yellow-500" />
-      </div>
+        {/* KPI */}
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          <KpiCard
+            title="Users"
+            value={stats.totalUsers}
+            color="bg-blue-600"
+          />
+          <KpiCard
+            title="Active"
+            value={stats.activeUsers}
+            color="bg-emerald-600"
+          />
+          <KpiCard
+            title="Jobs"
+            value={stats.totalJobs}
+            color="bg-violet-600"
+          />
+          <KpiCard
+            title="Events"
+            value={stats.totalEvents}
+            color="bg-amber-500"
+          />
+        </div>
 
-      <Suspense fallback={<div>Loading...</div>}>
-      <AdminCharts eventBreakdown={stats.eventBreakdown}/>
-      </Suspense>
-      {/* Reminder Monitoring */}
-<div className="bg-white shadow rounded-xl p-6 space-y-6">
-  <h2 className="text-xl font-semibold">Reminder Monitoring</h2>
+        {/* Chart */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+          <Suspense fallback={<p>Loading chart...</p>}>
+            <AdminCharts
+              eventBreakdown={stats.eventBreakdown}
+            />
+          </Suspense>
+        </div>
 
-  {reminderStats && (
-    <div className="grid grid-cols-4 gap-4">
-      <KpiCard title="Total Reminders" value={reminderStats.total || 0} color="bg-indigo-500" />
-      <KpiCard title="Sent" value={reminderStats.sent || 0} color="bg-green-500" />
-      <KpiCard title="Failed" value={reminderStats.failed || 0} color="bg-red-500" />
-      <KpiCard title="Total Retries" value={reminderStats.totalRetries || 0} color="bg-yellow-500" />
-    </div>
-  )}
+        {/* Reminder Health */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-5">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Reminder Health
+            </h2>
+          </div>
 
-  <div className="overflow-x-auto">
-    <table className="w-full table-auto border-collapse mt-4">
-      <thead>
-        <tr className="bg-gray-200">
-          <th className="p-2 border">User</th>
-          <th className="p-2 border">Application</th>
-          <th className="p-2 border">Failure Reason</th>
-          <th className="p-2 border">Retries</th>
-          <th className="p-2 border">Last Tried</th>
-          <th className="p-2 border">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {failedReminders.map((reminder) => (
-          <tr key={reminder._id}>
-            <td className="p-2 border">
-              {reminder.user.name}
-              <br />
-              <span className="text-sm text-gray-500">
-                {reminder.user.email}
-              </span>
-            </td>
-            <td className="p-2 border">
-              {reminder.job.companyName}
-              <br />
-              {reminder.job.role}
-            </td>
-            <td className="p-2 border text-red-600">
-              {reminder.failureReason}
-            </td>
-            <td className="p-2 border text-center">
-              {reminder.retryCount}
-            </td>
-            <td className="p-2 border text-center">
-              {new Date(reminder.failedAt).toLocaleString()}
-            </td>
-            <td className="p-2 border text-center">
-              <button
-                onClick={() => retryReminder(reminder._id)}
-                className="bg-blue-600 text-white px-3 py-1 rounded"
+          {reminderStats && (
+            <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <KpiCard
+                title="Total"
+                value={reminderStats.total}
+                color="bg-indigo-600"
+              />
+              <KpiCard
+                title="Sent"
+                value={reminderStats.sent}
+                color="bg-green-600"
+              />
+              <KpiCard
+                title="Failed"
+                value={reminderStats.failed}
+                color="bg-red-600"
+              />
+              <KpiCard
+                title="Retries"
+                value={reminderStats.totalRetries}
+                color="bg-yellow-500"
+              />
+            </div>
+          )}
+
+          {/* Mobile Cards */}
+          <div className="space-y-4 lg:hidden">
+            {failedReminders.map((r) => (
+              <div
+                key={r._id}
+                className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
               >
-                Retry
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-</div>
-      {/* User Management */}
-      <div className="bg-white shadow rounded-xl p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">User Management</h2>
-          <div className="space-x-2">
-            {selectedUsers.length > 0 && (
-              <>
+                <div className="font-semibold">{r.user.name}</div>
+                <div className="text-sm text-slate-500">
+                  {r.user.email}
+                </div>
+
+                <div className="mt-3">
+                  <div className="font-medium">
+                    {r.job.companyName}
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    {r.job.role}
+                  </div>
+                </div>
+
+                <div className="mt-3 text-red-600 text-sm">
+                  {r.failureReason}
+                </div>
+
                 <button
-                  onClick={bulkToggle}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded"
+                  onClick={() => retryReminder(r._id)}
+                  className="mt-4 w-full rounded-lg bg-blue-600 py-2 text-white"
                 >
-                  Toggle Status ({selectedUsers.length})
+                  Retry
                 </button>
-                <button
-                  onClick={bulkDelete}
-                  className="bg-red-600 text-white px-3 py-1 rounded"
-                >
-                  Delete ({selectedUsers.length})
-                </button>
-              </>
-            )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden overflow-x-auto lg:block">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b text-left text-slate-500">
+                  <th className="pb-3">User</th>
+                  <th>Job</th>
+                  <th>Reason</th>
+                  <th className="text-center">Retries</th>
+                  <th className="text-center">Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {failedReminders.map((r) => (
+                  <tr
+                    key={r._id}
+                    className="border-b dark:border-slate-800"
+                  >
+                    <td className="py-4">
+                      <div className="font-medium">
+                        {r.user.name}
+                      </div>
+                      <div className="text-sm text-slate-500">
+                        {r.user.email}
+                      </div>
+                    </td>
+
+                    <td>
+                      {r.job.companyName}
+                      <div className="text-sm text-slate-500">
+                        {r.job.role}
+                      </div>
+                    </td>
+
+                    <td className="text-red-600">
+                      {r.failureReason}
+                    </td>
+
+                    <td className="text-center">
+                      {r.retryCount}
+                    </td>
+
+                    <td className="text-center">
+                      <button
+                        onClick={() =>
+                          retryReminder(r._id)
+                        }
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-white"
+                      >
+                        Retry
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="flex items-center mb-4 space-x-2">
+        {/* Users */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              User Management
+            </h2>
+
+            {selectedUsers.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={bulkToggle}
+                  className="rounded-lg bg-amber-500 px-4 py-2 text-white"
+                >
+                  Toggle
+                </button>
+
+                <button
+                  onClick={bulkDelete}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-white"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+
           <input
-            type="text"
-            placeholder="Search by name or email..."
-            className="border p-2 rounded flex-1"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name or email..."
+            className="mb-5 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           />
-          <button
-            onClick={fetchUsers}
-            className="bg-blue-600 text-white px-3 py-2 rounded"
-          >
-            Search
-          </button>
-        </div>
 
-        {/* Users Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto border-collapse">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="p-2 border">
+          {/* Mobile */}
+          <div className="space-y-4 lg:hidden">
+            {filteredUsers.map((u) => (
+              <div
+                key={u._id}
+                className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="font-semibold">
+                      {u.name}
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      {u.email}
+                    </div>
+                  </div>
+
                   <input
                     type="checkbox"
-                    checked={selectedUsers.length === users.length}
-                    onChange={handleSelectAll}
+                    checked={selectedUsers.includes(u._id)}
+                    onChange={() =>
+                      setSelectedUsers((prev) =>
+                        prev.includes(u._id)
+                          ? prev.filter(
+                              (id) => id !== u._id
+                            )
+                          : [...prev, u._id]
+                      )
+                    }
                   />
-                </th>
-                <th className="p-2 border">Name</th>
-                <th className="p-2 border">Email</th>
-                <th className="p-2 border">Role</th>
-                <th className="p-2 border">Status</th>
-                <th className="p-2 border">Jobs</th>
-                <th className="p-2 border">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user._id} className="hover:bg-gray-100">
-                  <td className="p-2 border text-center">
+                </div>
+
+                <div className="mt-3 flex items-center justify-between text-sm">
+                  <span>{u.role}</span>
+                  <span
+                    className={`rounded-full px-2 py-1 ${
+                      u.isActive
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {u.isActive
+                      ? "Active"
+                      : "Suspended"}
+                  </span>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => toggleUser(u._id)}
+                    className="flex-1 rounded-lg border py-2"
+                  >
+                    Toggle
+                  </button>
+
+                  <button
+                    onClick={() => deleteUser(u._id)}
+                    className="flex-1 rounded-lg bg-red-600 py-2 text-white"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop */}
+          <div className="hidden overflow-x-auto lg:block">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b text-left text-slate-500">
+                  <th className="pb-3">
                     <input
                       type="checkbox"
-                      checked={selectedUsers.includes(user._id)}
-                      onChange={() => handleSelectUser(user._id)}
+                      checked={
+                        selectedUsers.length === users.length
+                      }
+                      onChange={() =>
+                        setSelectedUsers(
+                          selectedUsers.length ===
+                            users.length
+                            ? []
+                            : users.map((u) => u._id)
+                        )
+                      }
                     />
-                  </td>
-                  <td className="p-2 border">{user.name}</td>
-                  <td className="p-2 border">{user.email}</td>
-                  <td className="p-2 border">{user.role}</td>
-                  <td className="p-2 border">
-                    <span className={user.isActive ? "text-green-600" : "text-red-600"}>
-                      {user.isActive ? "Active" : "Suspended"}
-                    </span>
-                  </td>
-                  <td className="p-2 border text-center">{user.jobs?.length}</td>
-                  <td className="p-2 border space-x-2">
-                    <button
-                      onClick={() => toggleUser(user._id)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded"
-                    >
-                      Toggle
-                    </button>
-                    <button
-                      onClick={() => deleteUser(user._id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded"
-                    >
-                      Delete
-                    </button>
-                  </td>
+                  </th>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Jobs</th>
+                  <th className="text-center">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {loading && <p className="mt-2 text-gray-500">Loading users...</p>}
+              </thead>
+
+              <tbody>
+                {filteredUsers.map((u) => (
+                  <tr
+                    key={u._id}
+                    className="border-b dark:border-slate-800"
+                  >
+                    <td className="py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(
+                          u._id
+                        )}
+                        onChange={() =>
+                          setSelectedUsers((prev) =>
+                            prev.includes(u._id)
+                              ? prev.filter(
+                                  (id) => id !== u._id
+                                )
+                              : [...prev, u._id]
+                          )
+                        }
+                      />
+                    </td>
+
+                    <td>
+                      <div className="font-medium">
+                        {u.name}
+                      </div>
+                      <div className="text-sm text-slate-500">
+                        {u.email}
+                      </div>
+                    </td>
+
+                    <td>{u.role}</td>
+
+                    <td>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs ${
+                          u.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {u.isActive
+                          ? "Active"
+                          : "Suspended"}
+                      </span>
+                    </td>
+
+                    <td>{u.jobs.length}</td>
+
+                    <td>
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() =>
+                            toggleUser(u._id)
+                          }
+                          className="rounded-lg border px-3 py-2"
+                        >
+                          Toggle
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            deleteUser(u._id)
+                          }
+                          className="rounded-lg bg-red-600 px-3 py-2 text-white"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {loadingUsers && (
+              <div className="py-4 text-center text-slate-500">
+                Updating...
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

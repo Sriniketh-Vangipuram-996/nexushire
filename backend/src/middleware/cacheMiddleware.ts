@@ -11,13 +11,15 @@ export function cache(ttl:number){
         if(!req.user){
             return next();
         }
-        const tenantId=req.headers["tenant-id"] ;
-        if(!tenantId || typeof tenantId !== "string"){
-            return res.status(400).json({
-                success:false,
-                message:"Tenant ID missing"
-            });
+        const tenantId = req.user.tenantId;
+
+        if (!tenantId) {
+        return res.status(400).json({
+            success: false,
+            message: "Tenant ID missing",
+        });
         }
+
         const userId=req.user.userId;
 
         const key=buildCacheKey(
@@ -28,11 +30,9 @@ export function cache(ttl:number){
         );
 
         const cachedData=await getCache(key);
-        if(cachedData){
-            return res.json({
-                source:"cache",
-                ...cachedData,
-            });
+        if (cachedData) {
+            res.setHeader("X-Cache", "HIT");
+            return res.json(cachedData);
         }
 
         //override res.json to capture response

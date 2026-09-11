@@ -13,7 +13,7 @@ router.post("/signup",authRateLimiter,validate(registerSchema),signup);
 router.post("/login",slidingWindowLimiter(15*60*1000,5),validate(loginSchema),login);
 router.get("/me",requireAuth,me);
 router.post("/logout",logout);
-router.get("/verify-email",verifyEmail);
+router.post("/verify-email",verifyEmail);
 router.post("/refresh",strictRateLimiter,refresh);
 router.post("/request-password-reset",slidingWindowLimiter(15*60*1000,5),requestPasswordReset);
 router.post("/reset-password",strictRateLimiter,resetPassword);

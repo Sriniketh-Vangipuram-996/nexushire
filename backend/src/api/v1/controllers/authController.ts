@@ -98,25 +98,44 @@ export const login=async(req:Request,res:Response)=>{
             requestId: req.requestId,
         });
 
-        const accessToken=signAccessToken(user._id.toString(),user.role,user.tenantId.toString());
-        const refreshToken=signRefreshToken(user._id.toString(),user.role,user.tenantId.toString());
+        const accessToken = signAccessToken(
+            user._id.toString(),
+            user.role,
+            user.tenantId.toString()
+            );
 
-        res
-        .cookie("access_token",accessToken,{
-            httpOnly:true,
-            sameSite:"lax",
-            secure:false,
-            path:"/",
-        })
+            const refreshToken = signRefreshToken(
+            user._id.toString(),
+            user.role,
+            user.tenantId.toString()
+            );
+            const cookieOptions = {
+            httpOnly: true,
+            sameSite: "lax" as const,
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            };
 
-        .cookie("refresh_token",refreshToken,{
-            httpOnly:true,
-            sameSite:"lax",
-            secure:false,//true for only https,
-            path:"/",
-        })
-
-        .json({message:"Login Successful"});
+            res
+            .cookie("access_token", accessToken, cookieOptions)
+            .cookie("refresh_token", refreshToken, cookieOptions)
+            .json({
+                message: "Login successful",
+                user: {
+                _id: user._id,
+                email: user.email,
+                role: user.role,
+                emailVerified: user.emailVerified,
+                tenantId: user.tenantId,
+                name: user.name,
+                phone: user.phone,
+                linkedin: user.linkedin,
+                github: user.github,
+                leetcode: user.leetcode,
+                avatar: user.avatar,
+                resume: user.resume,
+                },
+            });
     }
 
     catch(error){
@@ -126,21 +145,30 @@ export const login=async(req:Request,res:Response)=>{
     }
 }
 
-export const me=async(req:AuthRequest,res:Response)=>{
-    const user=await User.findById(req.user.userId).select("_id email role resume");
+export const me = async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.user.userId).select(
+    "_id email role emailVerified tenantId resume name phone linkedin github leetcode avatar"
+  );
 
-    if(!user){
-        return res.status(401).json({error:"User not found."});
-    }
+  if (!user) {
+    return res.status(401).json({ error: "User not found." });
+  }
 
-    res.json({user});
+  res.json({ user });
 };
 
 export const logout=(_req:Request,res:Response)=>{
-    res
-    .clearCookie("access_token")
-    .clearCookie("refresh_token")
-    .json({message:"Logged Out successfully."});
+    const cookieOptions = {
+        httpOnly: true,
+        sameSite: "lax" as const,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+};
+
+res
+  .clearCookie("access_token", cookieOptions)
+  .clearCookie("refresh_token", cookieOptions)
+  .json({ message: "Logged out" });
 };
 
 export const refresh = async (req: Request, res: Response) => {
@@ -155,61 +183,79 @@ export const refresh = async (req: Request, res: Response) => {
 
     const newAccessToken = signAccessToken(user._id.toString(),user.role,user.tenantId.toString());
 
-    res.cookie("access_token", newAccessToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false,
-      path: "/",
-    });
+    const cookieOptions = {
+        httpOnly: true,
+        sameSite: "lax" as const,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        };
 
-    return res.json({user});
- // <--- important: send user object
+    res.cookie("access_token", newAccessToken, cookieOptions);
+
+    return res.json({
+    user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        tenantId: user.tenantId,
+
+        name: user.name,
+        phone: user.phone,
+        linkedin: user.linkedin,
+        github: user.github,
+        leetcode: user.leetcode,
+        avatar: user.avatar,
+        resume: user.resume,
+    },
+    });
+    // <--- important: send user object
   } catch {
     return res.status(401).json({ error: "Invalid refresh Token." });
   }
 };
 
+export const verifyEmail = async (req: Request, res: Response) => {
+  const { token } = req.body;
 
-export const verifyEmail=async(req:Request,res:Response)=>{
-    const{token}=req.query;
-    if(!token){
-        return res.status(400).send("Invalid verification link");
+  if (!token) {
+    return res.status(400).json({
+      error: "Verification token missing",
+    });
+  }
+
+  try {
+    const payload = jwt.verify(
+      token,
+      process.env.JWT_EMAIL_SECRET!
+    ) as { userId: string };
+
+    const user = await User.findById(payload.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+      });
     }
 
-    try{
-        const payload=jwt.verify(
-            token as string,
-            process.env.JWT_EMAIL_SECRET!
-        )as {userId:string};
-
-        const user=await User.findByIdAndUpdate(payload.userId);
-
-        if(!user){
-            return res.status(400).send("User not found.");
-        }
-
-        user.emailVerified=true;
-        await user.save();
-        // 🔥 ISSUE TOKENS HERE (AUTO LOGIN)
-        const accessToken = signAccessToken(user._id.toString(),user.role,user.tenantId.toString());
-        const refreshToken = signRefreshToken(user._id.toString(),user.role,user.tenantId.toString());
-
-        res
-        .cookie("access_token", accessToken, {
-            httpOnly: true,
-            sameSite: "lax",
-        })
-        .cookie("refresh_token", refreshToken, {
-            httpOnly: true,
-            sameSite: "lax",
-        })
-        .redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    if (user.emailVerified) {
+      return res.json({
+        message: "Email already verified",
+      });
     }
-    catch{
-        res.status(400).send("Verification link expired or invalid.");
-    }
-}
 
+    user.emailVerified = true;
+    await user.save();
+
+    return res.json({
+      message: "Email verified successfully",
+    });
+  } catch {
+    return res.status(400).json({
+      error: "Invalid or expired verification link",
+    });
+  }
+};
 export const requestPasswordReset=async(req:Request,res:Response)=>{
     const {email}=req.body;
     const user=await User.findOne({email});

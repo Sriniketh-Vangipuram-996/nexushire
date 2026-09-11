@@ -2,9 +2,9 @@ import User from "../models/User";
 import JobApplication from "../models/JobApplication";
 import Reminder from "../models/Reminder";
 import { transporter } from "../config/email";
-import { weeklySummaryTemplate } from "../common/utils/weeklySummaryTemplate";
-import { publisher } from "../common/utils/redisPubSub";
-import { logger } from "../common/utils/logger";
+import { weeklySummaryTemplate } from "../utils/weeklySummaryTemplate";
+import { publisher } from "../utils/redisPubSub";
+import { logger } from "../utils/logger";
 
 
 type AppStats = {

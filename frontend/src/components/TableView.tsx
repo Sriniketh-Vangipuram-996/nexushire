@@ -24,20 +24,24 @@ const TableView: React.FC<Props> = ({
   onDeleteClick,
 }) => {
   return (
-    <table border={1} cellPadding={10} width="100%">
-      <thead>
-        <tr>
-          <th></th>
-          <th>Company</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+  <table className="w-full text-sm">
+    <thead className="bg-gray-50 dark:bg-gray-800">
+      <tr className="text-left text-gray-600 dark:text-gray-300">
+        <th className="p-4"></th>
+        <th className="p-4">Company</th>
+        <th className="p-4">Role</th>
+        <th className="p-4">Status</th>
+        <th className="p-4">Actions</th>
+      </tr>
+    </thead>
 
-      <tbody>
-        {jobs.map((job) => (
-          <tr key={job._id}>
+    <tbody>
+      {jobs.map((job) => (
+        <tr
+          key={job._id}
+          className="border-t border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/40"
+        >
             <td>
               <input
                 type="checkbox"
@@ -53,6 +57,7 @@ const TableView: React.FC<Props> = ({
 
             <td>
               <select
+              className="rounded-lg border border-gray-300 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-800"
                 value={job.status}
                 onChange={(e) =>
                   onStatusChange(job._id, e.target.value)
@@ -66,7 +71,8 @@ const TableView: React.FC<Props> = ({
             </td>
 
             <td>
-              <button onClick={() => onDeleteClick(job._id)}>
+              <button onClick={() => onDeleteClick(job._id)}
+                className="rounded-lg bg-red-50 px-3 py-1.5 text-red-600 hover:bg-red-100">
                 Delete
               </button>
             </td>
@@ -74,6 +80,7 @@ const TableView: React.FC<Props> = ({
         ))}
       </tbody>
     </table>
+    </div>
   );
 };
 

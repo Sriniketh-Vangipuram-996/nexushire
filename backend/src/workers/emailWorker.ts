@@ -54,7 +54,7 @@ async function startWorker() {
         /* =======================================================
            🔹 JOB REMINDER
         ======================================================= */
-        if (job.name === "jobReminder") {
+        if (job.name === "sendReminder") {
           const { to, jobTitle, company, reminderId, userId } =
             job.data as ReminderJobData;
 

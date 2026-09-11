@@ -13,6 +13,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import RequireRole from "./components/RequireRole";
 import RequireAuth from "./components/RequireAuth";
 
+
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignupPage = lazy(() => import("./pages/SignupPage"));
@@ -27,7 +28,9 @@ const DashboardAnalytics = lazy(() => import("./pages/DashboardAnalytics"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const RemindersPage = lazy(() => import("./pages/RemindersPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
-
+const VerifyEmailPage = lazy(
+  () => import("./pages/VerifyEmailPage")
+);
 // Preload functions
 const preloadDashboardPage = () => import("./pages/DashboardPage");
 const preloadAnalyticsPage = () => import("./pages/DashboardAnalytics");
@@ -136,6 +139,10 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route
+            path="/verify-email"
+            element={<VerifyEmailPage />}
+          />
         </Route>
 
         {/* APP ROUTES */}

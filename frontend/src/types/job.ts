@@ -5,7 +5,7 @@ export interface Job {
   companyName: string;
   role: string;
   description: string;
-  status: "Applied" | "Interview" | "Rejected" | "Offer";
+  status: "Applied" | "Interviewed" | "Rejected" | "Offer";
   appliedDate: string;
   notes?: string;
   resume?: Resume; // attached resume

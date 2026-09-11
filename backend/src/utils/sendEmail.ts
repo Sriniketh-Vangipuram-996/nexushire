@@ -12,7 +12,7 @@ export const sendVerificationEmail=async(email:string,token:string)=>{
         }
     });
 
-    const link=`${process.env.BACKEND_URL}/api/auth/verify-email?token=${token}`;
+    const link=`${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
     await transporter.sendMail({
         from:'"NexusHire" <no-reply@nexushire.com>',

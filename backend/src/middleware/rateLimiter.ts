@@ -93,6 +93,6 @@ export const authRateLimiter = createRateLimiter({
  */
 export const strictRateLimiter = createRateLimiter({
   windowMs: 10 * 60 * 1000,
-  max: 3,
+  max: 20,
   message: "Too many attempts. Action temporarily blocked.",
 });

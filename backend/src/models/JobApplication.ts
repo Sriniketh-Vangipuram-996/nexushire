@@ -38,7 +38,7 @@ const JobApplicationSchema=new Schema<IJobApplication>(
         },
         status:{
             type:String,
-            enum:["Applied","Interview","Rejected","Offer"],
+            enum:["Applied","Interviewed","Rejected","Offer"],
             default:"Applied",
         },
         appliedDate:{

@@ -7,6 +7,17 @@ const api = axios.create({
     withCredentials: true,
 });
 
+api.interceptors.request.use((config) => {
+  const user = useAuthStore.getState().user;
+
+  if (user?.tenantId) {
+    config.headers["tenant-id"] = user.tenantId;
+  }
+
+  return config;
+});
+
+
 api.interceptors.response.use(
     (res) => res,
     async (err) => {
@@ -15,13 +26,15 @@ api.interceptors.response.use(
         if (
             err.response?.status === 401 &&
             !original._retry &&
-            !original.url.includes("/refresh")
+            !original.url.includes("/auth/refresh")
         ) {
             original._retry = true;
 
             try {
                 const refreshRes = await api.post(
-                    "/auth/refresh"
+                    "/auth/refresh",
+                    {},
+                    {withCredentials:true}
                 );
 
                 await useAuthStore.getState().login(refreshRes.data.user);

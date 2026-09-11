@@ -1,33 +1,38 @@
+// src/store/themeStore.ts
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
-type Theme="light"|"dark";
+type Theme = "light" | "dark";
 
-type ThemeState={
-    theme:Theme;
-    setTheme:(theme:Theme)=>void;
-    toggleTheme:()=>void;
+interface ThemeState {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
 }
 
-export const useThemeStore=create<ThemeState>()(
-    persist(
-        (set)=>({
-            theme:"light",
+const applyTheme = (theme: Theme) => {
+  const html = document.documentElement;
 
-            setTheme:(theme)=>{
-                set({theme});
-                document.documentElement.classList.toggle("dark",theme==="dark");
-            },
+  html.classList.remove("light", "dark");
+  html.classList.add(theme);
 
-            toggleTheme:()=>
-                set((state)=>{
-                    const newTheme=state.theme==="light"?"dark":"light";
-                    document.documentElement.classList.toggle("dark",newTheme==="dark")
-                    return {theme:newTheme};
-                }),
-        }),
-        {
-            name:"theme-storage",
-        }
-    )
-);
+  localStorage.setItem("theme", theme);
+};
+
+export const useThemeStore = create<ThemeState>((set) => ({
+  theme: (localStorage.getItem("theme") as Theme) || "light",
+
+  setTheme: (theme) => {
+    applyTheme(theme);
+    set({ theme });
+  },
+
+  toggleTheme: () =>
+    set((state) => {
+      const next = state.theme === "light" ? "dark" : "light";
+      applyTheme(next);
+      return { theme: next };
+    }),
+}));
+
+// Apply saved theme on app startup
+applyTheme((localStorage.getItem("theme") as Theme) || "light");

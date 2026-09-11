@@ -6,92 +6,108 @@ import { useNavigate } from "react-router-dom";
 interface Props {
   toggleSidebar: () => void;
 }
-interface Notification{
-  id:string;
-  read:boolean;
-  message:string;
+
+interface Notification {
+  _id: string;
+  message: string;
+  isRead: boolean;
 }
+
 export default function Navbar({ toggleSidebar }: Props) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [openProfile, setOpenProfile] = useState(false);
+
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
+
   const navigate = useNavigate();
 
-  const fetchNotifications = async () => {
-    const res = await api.get("/notifications");
-    setNotifications(res.data);
-  };
-
   useEffect(() => {
-    const loadData=async()=>{
-      fetchNotifications();
-    }
-    loadData();
+    const fetchNotifications = async () => {
+      try {
+        const res = await api.get("/notifications");
+        setNotifications(res.data ?? []);
+      } catch {
+        setNotifications([]);
+      }
+    };
+
+    fetchNotifications();
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <div className="flex justify-between items-center px-6 py-4 bg-white dark:bg-gray-900 shadow">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6 dark:border-slate-800 dark:bg-slate-900">
       {/* Left */}
-      <button
-        onClick={toggleSidebar}
-        className="md:hidden text-xl"
-      >
-        ☰
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggleSidebar}
+          className="rounded-lg p-2 hover:bg-slate-100 md:hidden dark:hover:bg-slate-800"
+        >
+          ☰
+        </button>
+
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Dashboard
+          </h2>
+          <p className="hidden text-xs text-slate-500 sm:block">
+            Welcome back
+          </p>
+        </div>
+      </div>
 
       {/* Right */}
-      <div className="flex items-center gap-6">
-
-        {/* Dark Mode Toggle */}
+      <div className="flex items-center gap-2">
         <button
           onClick={() =>
             setTheme(theme === "dark" ? "light" : "dark")
           }
+          className="rounded-xl border border-slate-200 p-2 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
         >
-          {theme === "dark" ? "🌞" : "🌙"}
+          {theme === "dark" ? "☀️" : "🌙"}
         </button>
 
-        {/* Notifications */}
-        <div
-          className="relative cursor-pointer"
+        <button
           onClick={() => navigate("/notifications")}
+          className="relative rounded-xl border border-slate-200 p-2 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
         >
           🔔
           {unreadCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 rounded-full">
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
               {unreadCount}
             </span>
           )}
-        </div>
+        </button>
 
-        {/* Profile Dropdown */}
         <div className="relative">
           <button
             onClick={() => setOpenProfile(!openProfile)}
-            className="rounded-full bg-gray-200 w-8 h-8"
-          />
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-semibold text-white"
+          >
+            U
+          </button>
 
           {openProfile && (
-            <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow-xl rounded-xl w-40">
+            <div className="absolute right-0 mt-2 w-44 rounded-xl border border-slate-200 bg-white py-2 dark:border-slate-700 dark:bg-slate-900">
               <button
                 onClick={() => navigate("/profile")}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="block w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                Profile
+                👤 Profile
               </button>
+
               <button
                 onClick={() => navigate("/login")}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
               >
-                Logout
+                🚪 Logout
               </button>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </header>
   );
 }

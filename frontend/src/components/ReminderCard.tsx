@@ -1,5 +1,5 @@
 import { type Reminder } from "../types/reminder";
-import { getReminders,cancelReminder } from "../services/reminderService";
+import { cancelReminder } from "../services/reminderService";
 import { useEffect } from "react";
 import { useState } from "react";
 import api from "../lib/axios";
@@ -46,57 +46,63 @@ export default function ReminderCard({ reminder, onCancel }: Props) {
     });
 
     toast.success("Reminder snoozed");
-    getReminders();
+    onCancel();
   }
   return (
-    <div className="bg-white shadow-lg rounded-2xl p-6 border">
-      {/* Check if reminder.job exists */}
-      {reminder.job ? (
-        <>
-          <h3 className="text-lg font-semibold">
-            {reminder.job.role}
-          </h3>
-          <p className="text-gray-500">
-            {reminder.job.companyName}
-          </p>
-        </>
-      ) : (
-        <p className="text-red-600">Job not found (it may have been deleted)</p>
-      )}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
 
-      <p className="mt-2 text-sm">
-        Date: {new Date(reminder.reminderDate).toLocaleString()}
+  <div className="flex items-start justify-between">
+    <div>
+      <h3 className="text-lg font-semibold">
+        {reminder.job?.role}
+      </h3>
+
+      <p className="text-sm text-gray-500">
+        {reminder.job?.companyName}
       </p>
-
-      <p className="text-sm text-blue-600 mt-1">
-        {reminder.status === "scheduled" && countdown}
-      </p>
-
-      <span
-        className={`inline-block mt-2 px-3 py-1 text-xs rounded-full ${
-          reminder.status === "scheduled"
-            ? "bg-yellow-100 text-yellow-700"
-            : reminder.status === "sent"
-            ? "bg-green-100 text-green-700"
-            : reminder.status === "failed"
-            ? "bg-red-100 text-red-700"
-            : "bg-gray-200 text-gray-600"
-        }`}
-      >
-        {reminder.status}
-      </span>
-
-      {reminder.status === "scheduled" && (
-        <button
-          onClick={handleCancel}
-          className="mt-4 w-full bg-red-500 text-white py-2 rounded-xl hover:bg-red-600 transition"
-        >
-          Cancel Reminder
-        </button>
-      )}
-      <button onClick={()=>snooze(1)}>+1 Day</button>
-      <button onClick={()=>snooze(3)}>+3 Days</button>
-
     </div>
+
+    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
+      {reminder.status}
+    </span>
+  </div>
+
+  <div className="mt-4 space-y-2 text-sm text-gray-600">
+    <p>📅 {new Date(reminder.reminderDate).toLocaleString()}</p>
+
+    {reminder.status === "scheduled" && (
+      <p className="font-medium text-emerald-600">
+        ⏳ {countdown}
+      </p>
+    )}
+  </div>
+
+  {reminder.status === "scheduled" && (
+    <div className="mt-5 flex gap-2">
+      <button
+        onClick={() => snooze(1)}
+        className="flex-1 rounded-lg border py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+      >
+        +1 Day
+      </button>
+
+      <button
+        onClick={() => snooze(3)}
+        className="flex-1 rounded-lg border py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+      >
+        +3 Days
+      </button>
+    </div>
+  )}
+
+  {reminder.status === "scheduled" && (
+    <button
+      onClick={handleCancel}
+      className="mt-3 w-full rounded-lg bg-red-600 py-2 text-white hover:bg-red-700"
+    >
+      Cancel Reminder
+    </button>
+  )}
+</div>
   );
 }

@@ -70,7 +70,7 @@ export const getDashboardAnalytics = async (
           total: { $sum: 1 },
           interviews: {
             $sum: {
-              $cond: [{ $eq: ["$status", "Interview"] }, 1, 0],
+              $cond: [{ $eq: ["$status", "Interviewed"] }, 1, 0],
             },
           },
           offers: {
