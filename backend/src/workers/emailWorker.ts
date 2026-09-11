@@ -2,8 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { Worker, Job } from "bullmq";
-import { transporter } from "../config/email";
-import Reminder from "../models/Reminder";
+import { resend, resendFromEmail } from "../config/email";import Reminder from "../models/Reminder";
 import Notification from "../models/Notification";
 import { remainderTemplate } from "../utils/emailTemplates";
 import { publisher } from "../utils/redisPubSub";
@@ -65,12 +64,16 @@ export async function startWorker() {
           }
 
           try {
-            await transporter.sendMail({
-              from: `"NexusHire" <no-reply@nexushire.com>`,
+            const result = await resend.emails.send({
+              from: resendFromEmail,
               to,
               subject: `Follow up: ${jobTitle}`,
               html: remainderTemplate(jobTitle, company),
             });
+
+            if (result.error) {
+              throw new Error(result.error.message);
+            }
 
             await Reminder.findByIdAndUpdate(reminderId, {
               status: "sent",
@@ -151,12 +154,16 @@ export async function startWorker() {
           }
 
           try {
-            await transporter.sendMail({
-              from: `"NexusHire" <no-reply@nexushire.com>`,
+            const result = await resend.emails.send({
+              from: resendFromEmail,
               to,
-              subject: `Auto Follow up: ${jobTitle}`,
+              subject: `Follow up: ${jobTitle}`,
               html: remainderTemplate(jobTitle, company),
             });
+
+            if (result.error) {
+              throw new Error(result.error.message);
+            }
 
             await Reminder.findByIdAndUpdate(reminderId, {
               status: "sent",

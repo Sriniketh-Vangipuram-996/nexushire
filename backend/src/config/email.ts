@@ -1,25 +1,12 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-export const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,          // MUST be false for 587
-  requireTLS: true,
+const apiKey = process.env.RESEND_API_KEY;
 
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+if (!apiKey) {
+  throw new Error("RESEND_API_KEY is missing");
+}
 
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-});
+export const resend = new Resend(apiKey);
 
-transporter.verify((err, success) => {
-  if (err) {
-    console.error("SMTP Error:", err);
-  } else {
-    console.log("SMTP Ready");
-  }
-});
+export const resendFromEmail =
+  process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";

@@ -1,8 +1,7 @@
 import User from "../models/User";
 import JobApplication from "../models/JobApplication";
 import Reminder from "../models/Reminder";
-import { transporter } from "../config/email";
-import { weeklySummaryTemplate } from "../utils/weeklySummaryTemplate";
+import { resend, resendFromEmail } from "../config/email";import { weeklySummaryTemplate } from "../utils/weeklySummaryTemplate";
 import { publisher } from "../utils/redisPubSub";
 import { logger } from "../utils/logger";
 
@@ -95,13 +94,16 @@ export const sendWeeklySummaries = async () => {
             pendingFollowUps,
         });
 
-    await transporter.sendMail({
-      from: `"NexusHire" <no-reply@nexushire.com>`,
-      to: user.email,
-      subject: "Your Weekly Career Summary",
-      html,
+    const result = await resend.emails.send({
+    from: resendFromEmail,
+    to: user.email,
+    subject: "Your Weekly Career Summary",
+    html,
     });
 
+    if (result.error) {
+        throw new Error(result.error.message);
+    }
     await publisher.publish(
         "notifications",
         JSON.stringify({
