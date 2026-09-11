@@ -221,7 +221,7 @@ async function startWorker() {
         if (job.name === "weeklySummary") {
           try {
             const { sendWeeklySummaries } = await import(
-              "../services/weeklySummaryService"
+              "../services/weeklySummaryService.js"
             );
 
             await sendWeeklySummaries();
