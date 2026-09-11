@@ -1,9 +1,11 @@
 import Redis from "ioredis";
 
-const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+const options = {
+  maxRetriesPerRequest: null,
+};
 
-export const publisher = new Redis(redisUrl);
-export const subscriber = new Redis(redisUrl);
+export const publisher = new Redis(process.env.REDIS_URL!, options);
+export const subscriber = new Redis(process.env.REDIS_URL!, options);
 
 publisher.on("connect", () => {
   console.log("Redis Publisher connected");
@@ -22,8 +24,6 @@ subscriber.on("error", (err) =>
 );
 
 export const connectPubSub = async () => {
-  // ❌ DO NOT call .connect()
-  // ioredis auto connects
   await publisher.ping();
   await subscriber.ping();
 };

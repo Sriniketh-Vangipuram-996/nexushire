@@ -1,10 +1,8 @@
 import Redis from "ioredis";
 import { logger } from "../utils/logger";
 
-
-const redisConnection = new Redis({
-  host: process.env.REDIS_HOST!,
-  port: Number(process.env.REDIS_PORT!),
+const redisConnection = new Redis(process.env.REDIS_URL!, {
+  maxRetriesPerRequest: null,
 });
 
 redisConnection.on("connect", () => {
@@ -13,7 +11,7 @@ redisConnection.on("connect", () => {
 
 redisConnection.on("error", (err) => {
   logger.error("Redis Error:");
-    logger.error(err);
+  logger.error(err);
 });
 
 export const connectRedis = async () => {

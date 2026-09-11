@@ -10,7 +10,7 @@ import { publisher } from "../utils/redisPubSub";
 import connectDB from "../config/db";
 import { logger } from "../utils/logger";
 import { createAuditLog } from "../services/auditService";
-
+import IORedis from "ioredis";
 interface ReminderJobData {
   to: string;
   jobTitle: string;
@@ -19,10 +19,11 @@ interface ReminderJobData {
   userId: string;
 }
 
-const redisConnection = {
-  host: process.env.REDIS_HOST!,
-  port: Number(process.env.REDIS_PORT!),
-};
+
+const redisConnection = new IORedis(process.env.REDIS_URL!, {
+  maxRetriesPerRequest: null,
+});
+
 
 async function startWorker() {
   try {
