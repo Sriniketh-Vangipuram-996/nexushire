@@ -14,7 +14,7 @@ import { logger } from "./utils/logger";
 import { setupQueueDashboard } from "./queues/queueMonitor";
 import FeatureFlag from "./models/FeatureFlag";
 import { restoreReminderJobs } from "./queues/restoreReminderJobs";
-
+import { startWorker } from "./workers/emailWorker";
 const PORT = process.env.PORT || 5000;
 const isTest=process.env.NODE_ENV==="test";
 async function start() {
@@ -38,9 +38,13 @@ async function start() {
     await connectPubSub();
     logger.info("Redis Pub/Sub connected.");
 
-    // Subscribe first
-await subscriber.subscribe("notifications");
-await subscriber.subscribe("admin_alerts");
+    // Start BullMQ worker inside this process
+  await startWorker();
+  logger.info("Email worker started");
+
+      // Subscribe first
+  await subscriber.subscribe("notifications");
+  await subscriber.subscribe("admin_alerts");
 
 // Global message listener
 subscriber.on("message", async (channel: string, message: string) => {

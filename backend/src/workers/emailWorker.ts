@@ -25,13 +25,12 @@ const redisConnection = new IORedis(process.env.REDIS_URL!, {
 });
 
 
-async function startWorker() {
+export async function startWorker() {
   try {
     logger.info({ redisConnection }, "Connecting to Redis");
 
     // 1️⃣ Connect MongoDB FIRST
-    await connectDB();
-    logger.info("Worker connected to MongoDB");
+    
 
     // 2️⃣ Connect Redis publisher
     if (!publisher.status || publisher.status !== "ready") {
@@ -304,4 +303,3 @@ async function startWorker() {
   }
 }
 
-startWorker();
