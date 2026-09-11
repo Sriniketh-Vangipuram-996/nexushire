@@ -1,5 +1,5 @@
 import "express";
-import { logger } from "../../../../common/utils/logger";
+import { Logger } from "pino";
 
 declare global {
   namespace Express {
@@ -7,13 +7,13 @@ declare global {
       userId: string;
       role?: string;
       email?: string;
-      tenantId?:string;
+      tenantId?: string;
     }
 
     interface Request {
       user?: UserPayload;
-      requestId?:string;
-      log?:typeof logger;
+      requestId?: string;
+      log?: Logger;
     }
   }
 }
