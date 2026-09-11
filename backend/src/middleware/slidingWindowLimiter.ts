@@ -2,9 +2,8 @@ import {Request,Response,NextFunction} from "express";
 import Redis from "ioredis";
 import { success } from "zod";
 
-const redis=new Redis({
-    host:process.env.REDIS_HOST,
-    port:Number(process.env.REDIS_PORT),
+const redis = new Redis(process.env.REDIS_URL!, {
+  maxRetriesPerRequest: null,
 });
 
 const ENABLE_RATE_LIMITER=process.env.ENABLE_RATE_LIMITER!=="false";

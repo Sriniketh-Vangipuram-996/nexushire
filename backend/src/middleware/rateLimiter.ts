@@ -11,10 +11,7 @@ const isTestOrLoad=["test","loadtest"].includes(process.env.NODE_ENV||"");
 export const redisClient = isTest
   ? null
   : createClient({
-      socket: {
-        host: process.env.REDIS_HOST,
-        port: Number(process.env.REDIS_PORT),
-      },
+      url: process.env.REDIS_URL,
     });
 
 if (!isTest && redisClient) {

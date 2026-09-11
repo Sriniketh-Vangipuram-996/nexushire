@@ -13,12 +13,12 @@ export const initSocket = async (httpServer: any) => {
     },
   });
 
-  const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+  const pubClient = new Redis(process.env.REDIS_URL!, {
+      maxRetriesPerRequest: null,
+  });
 
-  // ✅ Use ioredis
-  const pubClient = new Redis(redisUrl);
   const subClient = pubClient.duplicate();
-
+  
   // ioredis auto-connects
   await pubClient.ping();
   await subClient.ping();

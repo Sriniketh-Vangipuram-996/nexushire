@@ -2,9 +2,8 @@ import { Request,Response,NextFunction } from "express";
 import Redis from "ioredis";
 
 
-const redis=new Redis({
-    host:process.env.REDIS_HOST,
-    port:Number(process.env.REDIS_PORT),
+const redis = new Redis(process.env.REDIS_URL!, {
+  maxRetriesPerRequest: null,
 });
 
 export const tokenBucketLimiter=(capacity:number,refillRatePerSecond:number)=>{
