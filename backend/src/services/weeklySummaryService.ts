@@ -1,7 +1,7 @@
 import User from "../models/User";
 import JobApplication from "../models/JobApplication";
 import Reminder from "../models/Reminder";
-import { resend, resendFromEmail } from "../config/email";import { weeklySummaryTemplate } from "../utils/weeklySummaryTemplate";
+import { sendEmail } from "../config/email";import { weeklySummaryTemplate } from "../utils/weeklySummaryTemplate";
 import { publisher } from "../utils/redisPubSub";
 import { logger } from "../utils/logger";
 
@@ -94,16 +94,12 @@ export const sendWeeklySummaries = async () => {
             pendingFollowUps,
         });
 
-    const result = await resend.emails.send({
-    from: resendFromEmail,
+    const result = await sendEmail({
     to: user.email,
     subject: "Your Weekly Career Summary",
     html,
     });
-
-    if (result.error) {
-        throw new Error(result.error.message);
-    }
+    
     await publisher.publish(
         "notifications",
         JSON.stringify({

@@ -18,8 +18,11 @@ app.use(httpLogger);
 app.use(cookieParser());
 app.use(requestIdMiddleware);
 app.use(requestLogger);
-app.use(globalRateLimiter); // Apply global rate limiter to all routes
-//Routes..
+ // Apply global rate limiter to all routes
+
+app.use(globalRateLimiter);
+
+ //Routes..
 
 
 app.use("/uploads",

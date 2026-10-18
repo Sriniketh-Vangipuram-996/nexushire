@@ -1,28 +1,17 @@
-import { resend, resendFromEmail } from "../config/email";
+import { sendEmail } from "../config/email";
 
 export const sendResetPasswordEmail = async (
   email: string,
   link: string
-) => {
-  const result = await resend.emails.send({
-    from: resendFromEmail,
+): Promise<void> => {
+  await sendEmail({
     to: email,
-    subject: "Reset your password",
+    subject: "Reset your NexusHire password",
     html: `
       <h2>Password Reset</h2>
-
-      <p>Click below to reset your password.</p>
-
-      <a href="${link}"
-         style="padding:12px 20px;background:#2563eb;color:white;text-decoration:none;border-radius:8px;">
-        Reset Password
-      </a>
-
-      <p>${link}</p>
+      <p>You requested a password reset.</p>
+      <p><a href="${link}">Reset Password</a></p>
+      <p>If you did not request this, ignore this email.</p>
     `,
   });
-
-  if (result.error) {
-    throw new Error(result.error.message);
-  }
 };

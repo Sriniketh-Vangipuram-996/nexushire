@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { Worker, Job } from "bullmq";
-import { resend, resendFromEmail } from "../config/email";import Reminder from "../models/Reminder";
+import { sendEmail } from "../config/email";import Reminder from "../models/Reminder";
 import Notification from "../models/Notification";
 import { remainderTemplate } from "../utils/emailTemplates";
 import { publisher } from "../utils/redisPubSub";
@@ -64,16 +64,11 @@ export async function startWorker() {
           }
 
           try {
-            const result = await resend.emails.send({
-              from: resendFromEmail,
+            const result = await sendEmail({
               to,
               subject: `Follow up: ${jobTitle}`,
               html: remainderTemplate(jobTitle, company),
             });
-
-            if (result.error) {
-              throw new Error(result.error.message);
-            }
 
             await Reminder.findByIdAndUpdate(reminderId, {
               status: "sent",
@@ -154,16 +149,11 @@ export async function startWorker() {
           }
 
           try {
-            const result = await resend.emails.send({
-              from: resendFromEmail,
+            const result = await sendEmail({
               to,
               subject: `Follow up: ${jobTitle}`,
               html: remainderTemplate(jobTitle, company),
             });
-
-            if (result.error) {
-              throw new Error(result.error.message);
-            }
 
             await Reminder.findByIdAndUpdate(reminderId, {
               status: "sent",
