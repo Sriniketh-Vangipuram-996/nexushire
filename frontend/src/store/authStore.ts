@@ -1,3 +1,4 @@
+
 import { create } from "zustand";
 import api from "../lib/axios";
 
@@ -39,79 +40,75 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
 
+  // Called after login, or with the user returned by a refresh.
   login: async (userFromRefresh) => {
     if (userFromRefresh) {
-      const merged = {
-        ...get().user,
-        ...userFromRefresh,
-      };
-
       set({
         isAuthenticated: true,
-        user: merged,
+        user: {
+          ...get().user,
+          ...userFromRefresh,
+        } as User,
         isLoading: false,
       });
+
       return;
     }
 
-    const res = await api.get("/auth/me");
-
-    const merged = {
-      ...get().user,
-      ...res.data.user,
-    };
-
-    set({
-      isAuthenticated: true,
-      user: merged,
-      isLoading: false,
-    });
-  },
-
-  checkAuth: async () => {
-  try {
-    const me = await api.get("/auth/me");
-
-    set({
-      isAuthenticated: true,
-      user: me.data.user,
-    });
-  } catch {
     try {
-      const refresh = await api.post(
-        "/auth/refresh",
-        {},
-        { withCredentials: true }
-      );
+      const response = await api.get("/auth/me");
 
       set({
         isAuthenticated: true,
-        user: refresh.data.user,
+        user: response.data.user,
+        isLoading: false,
+      });
+    } catch (error) {
+      set({
+        isAuthenticated: false,
+        user: null,
+        isLoading: false,
+      });
+
+      throw error;
+    }
+  },
+
+  // Restore the session when the app starts.
+  // Axios handles a 401 and attempts refresh if appropriate.
+  checkAuth: async () => {
+    try {
+      const response = await api.get("/auth/me");
+
+      set({
+        isAuthenticated: true,
+        user: response.data.user,
       });
     } catch {
       set({
         isAuthenticated: false,
         user: null,
+        token: null,
       });
+    } finally {
+      set({ isLoading: false });
     }
-  } finally {
-    set({ isLoading: false });
-  }
-},
+  },
 
   logout: async () => {
     try {
       await api.post("/auth/logout");
     } catch {
-      console.error("Logout failed");
+      // Clear local authentication even if the server request fails.
+      // The server should clear its refresh cookie when reachable.
+    } finally {
+      set({
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        isLoading: false,
+      });
     }
-
-    set({
-      isAuthenticated: false,
-      user: null,
-      token: null,
-      isLoading: false,
-    });
   },
 
   setUser: (user) =>

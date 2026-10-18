@@ -1,66 +1,91 @@
+
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../lib/axios";
 import axios from "axios";
-import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Mail,
+  ArrowRight,
+} from "lucide-react";
+import api from "../lib/axios";
+
+// Capture and remove the token before React renders.
+// Email verification links should open this page as a fresh page load.
+const initialVerificationToken = (() => {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get("token");
+
+  if (token) {
+    url.searchParams.delete("token");
+
+    window.history.replaceState(
+      window.history.state,
+      document.title,
+      `${url.pathname}${url.search}${url.hash}`
+    );
+  }
+
+  return token;
+})();
+
+type VerificationState = "loading" | "success" | "error";
 
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
 
-  const [status, setStatus] = useState("Verifying your email...");
-  const [state, setState] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState(
+    "Verifying your email..."
+  );
+  const [state, setState] =
+    useState<VerificationState>("loading");
 
+  // Prevent duplicate verification requests in React Strict Mode.
   const verificationStarted = useRef(false);
 
   useEffect(() => {
     if (verificationStarted.current) return;
+
     verificationStarted.current = true;
 
     const verifyEmail = async () => {
-      // Read the token before cleaning the URL.
-      const token = new URLSearchParams(
-        window.location.search
-      ).get("token");
-
-      // Remove the token from the visible URL and current history entry.
-      if (token) {
-        window.history.replaceState(
-          window.history.state,
-          document.title,
-          window.location.pathname + window.location.hash
-        );
-      }
-
-      if (!token) {
+      if (!initialVerificationToken) {
         setState("error");
-        setStatus("Invalid or missing verification link.");
+        setStatus(
+          "The verification link is missing its token. Please request a new verification email."
+        );
         return;
       }
 
       try {
-        await api.post("/auth/verify-email", { token });
+        await api.post("/auth/verify-email", {
+          token: initialVerificationToken,
+        });
 
         setState("success");
-        setStatus("Your email has been verified successfully.");
-
-        setTimeout(() => {
-          navigate("/login?verified=true", { replace: true });
-        }, 1800);
-      } catch (err) {
-        setState("error");
+        setStatus(
+          "Your email has been verified successfully. You can now log in to NexusHire."
+        );
+      } catch (err: unknown) {
+        let message =
+          "We could not verify your email. The link may have expired or already been used.";
 
         if (axios.isAxiosError(err)) {
-          setStatus(
-            err.response?.data?.error || "Verification failed."
-          );
-        } else {
-          setStatus("Verification failed.");
+          const serverMessage = err.response?.data?.error;
+
+          if (typeof serverMessage === "string") {
+            message = serverMessage;
+          }
         }
+
+        setState("error");
+        setStatus(message);
       }
     };
 
     void verifyEmail();
-  }, [navigate]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden">
@@ -77,13 +102,14 @@ const VerifyEmailPage = () => {
             <div className="h-11 w-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
               N
             </div>
+
             <span className="text-2xl font-bold text-slate-900 dark:text-white">
               NexusHire
             </span>
           </Link>
         </div>
 
-        {/* Card */}
+        {/* Verification Card */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-8 text-center">
           {/* Status Icon */}
           <div
@@ -98,9 +124,11 @@ const VerifyEmailPage = () => {
             {state === "loading" && (
               <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
             )}
+
             {state === "success" && (
               <CheckCircle2 className="h-12 w-12 text-emerald-600" />
             )}
+
             {state === "error" && (
               <XCircle className="h-12 w-12 text-red-600" />
             )}
@@ -113,8 +141,9 @@ const VerifyEmailPage = () => {
             {state === "error" && "Verification Failed"}
           </h1>
 
-          {/* Description */}
-          <p className="mt-3 text-slate-500 leading-relaxed">{status}</p>
+          <p className="mt-3 text-slate-500 leading-relaxed">
+            {status}
+          </p>
 
           {/* Loading */}
           {state === "loading" && (
@@ -122,6 +151,7 @@ const VerifyEmailPage = () => {
               <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div className="h-full w-1/2 bg-blue-600 rounded-full animate-pulse" />
               </div>
+
               <p className="text-sm text-slate-500">
                 Please wait while we securely verify your account.
               </p>
@@ -130,14 +160,15 @@ const VerifyEmailPage = () => {
 
           {/* Success */}
           {state === "success" && (
-            <div className="mt-8 space-y-4">
-              <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-4">
+            <div className="mt-8">
+              <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-4 mb-5">
                 <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                  Redirecting to the login page...
+                  Your account is ready. Sign in to continue.
                 </p>
               </div>
 
               <button
+                type="button"
                 onClick={() => navigate("/login?verified=true")}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2"
               >
@@ -151,6 +182,7 @@ const VerifyEmailPage = () => {
           {state === "error" && (
             <div className="mt-8 space-y-3">
               <button
+                type="button"
                 onClick={() => navigate("/login")}
                 className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-semibold transition"
               >
