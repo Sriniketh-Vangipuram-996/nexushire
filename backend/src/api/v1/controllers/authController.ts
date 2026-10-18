@@ -1,205 +1,296 @@
-import { Request,Response } from "express";
+
+import { Request, Response } from "express";
 import * as bcrypt from "bcryptjs";
-import User from "../../../models/User";
 import jwt from "jsonwebtoken";
+
+import User from "../../../models/User";
+import { Tenant } from "../../../models/Tenant";
 import { AuthRequest } from "../../../middleware/auth";
-import { signAccessToken,signRefreshToken } from "../../../utils/jwt";
+import {
+  signAccessToken,
+  signRefreshToken,
+} from "../../../utils/jwt";
 import { signEmailToken } from "../../../utils/emailToken";
 import { sendVerificationEmail } from "../../../utils/sendEmail";
 import { signResetToken } from "../../../utils/resetToken";
 import { sendResetPasswordEmail } from "../../../utils/sendResetEmail";
-import { Tenant } from "../../../models/Tenant";
 import { createAuditLog } from "../../../services/auditService";
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const emailRegex=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const specialRegex = /[!@#$%^&*(),.?":{}|<>]/; 
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}|:<>?]).{8,}$/;
-// only real special characters
-export const signup=async(req:Request,res:Response)=>{
-    console.log("SIGNUP CONTROLLER HIT");
 
-    try{
-        const email=req.body.email?.trim().toLowerCase();
-        const password=req.body.password?.trim();
-        // Validation
-        if (!email || !password || !emailRegex.test(email) || !passwordRegex.test(password)) {
-  return res.status(400).json({
-    error: "Password must be 8+ chars with uppercase, lowercase, number & special char"
-  });
-}
-        const existingUser=await User.findOne({email:email.toLowerCase()});
-        if(existingUser){
-            return res.status(409).json({error:"Account already exists"});
-        }
+// Cookie settings are kept in this controller; no new file is required.
+const isProduction = process.env.NODE_ENV === "production";
 
-        const passwordHash=await bcrypt.hash(password,10);
-        const tenant=await Tenant.create({
-            name:`${email}'s Workspace`,
-        })
-        if(!tenant?._id){
-            return res.status(500).json({error:"Tenant creation failed. Please try again."});
-        }
-        const user=await User.create({
-            email,
-            passwordHash,
-            emailVerified:process.env.NODE_ENV==="test",
-            tenantId:tenant._id,
-        });
-
-        const token=signEmailToken(user._id.toString());
-        try{
-            await sendVerificationEmail(user.email,token);
-        }
-        catch(err){
-            req.log?.info("Email sending failed:");
-            req.log?.error(err);
-        }
-
-        return res.status(201).json({
-            message:"Account created. Please verify your email before logging in."
-        });
-    }
-    catch(err){
-        return res.status(500).json({error:"Something went wrong. Please try again."});
-    }
+const authCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? ("none" as const) : ("lax" as const),
+  path: "/",
 };
 
-export const login=async(req:Request,res:Response)=>{
-    try{
-        const {email,password}=req.body;
+const accessCookieOptions = {
+  ...authCookieOptions,
+  maxAge: 15 * 60 * 1000, // 15 minutes
+};
 
-        if(!email || !password){
-            return res.status(400).json({error:"Missing Credentials."});
-        }
+const refreshCookieOptions = {
+  ...authCookieOptions,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
 
-        const user=await User.findOne({email:email.toLowerCase()});
-        if(!user){
-            return res.status(404).json({error:"Account not found."});
-        }
+// ---------------- SIGNUP ----------------
 
-        const isMatch=await bcrypt.compare(password,user.passwordHash);
-        if(!isMatch){
-            return res.status(401).json({error:"Invalid Credentials."});
-        }
+export const signup = async (req: Request, res: Response) => {
+  try {
+    const email =
+      typeof req.body.email === "string"
+        ? req.body.email.trim().toLowerCase()
+        : "";
 
-        if(!user.emailVerified){
-            return res.status(403).json({
-                error:"Please verify your email before logging in."
-            })
-        }
-         await createAuditLog({
-            actorId: user._id.toString(),
-            action: "USER_LOGIN",
-            targetType: "User",
-            targetId: user._id.toString(),
-            ip: req.ip,
-            requestId: req.requestId,
-        });
+    const password =
+      typeof req.body.password === "string"
+        ? req.body.password.trim()
+        : "";
 
-        const accessToken = signAccessToken(
-            user._id.toString(),
-            user.role,
-            user.tenantId.toString()
-            );
-
-            const refreshToken = signRefreshToken(
-            user._id.toString(),
-            user.role,
-            user.tenantId.toString()
-            );
-            const cookieOptions = {
-            httpOnly: true,
-            sameSite: "lax" as const,
-            secure: process.env.NODE_ENV === "production",
-            path: "/",
-            };
-
-            res
-            .cookie("access_token", accessToken, cookieOptions)
-            .cookie("refresh_token", refreshToken, cookieOptions)
-            .json({
-                message: "Login successful",
-                user: {
-                _id: user._id,
-                email: user.email,
-                role: user.role,
-                emailVerified: user.emailVerified,
-                tenantId: user.tenantId,
-                name: user.name,
-                phone: user.phone,
-                linkedin: user.linkedin,
-                github: user.github,
-                leetcode: user.leetcode,
-                avatar: user.avatar,
-                resume: user.resume,
-                },
-            });
+    if (
+      !email ||
+      !password ||
+      !emailRegex.test(email) ||
+      !passwordRegex.test(password)
+    ) {
+      return res.status(400).json({
+        error:
+          "Password must be 8+ characters with uppercase, lowercase, number, and special character.",
+      });
     }
 
-    catch(error){
-        req.log?.info("LOGIN ERROR:");
-        req.log?.error(error);
-        return res.status(500).json({error:"Something went wrong. Please try again."});
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(409).json({
+        error: "Account already exists.",
+      });
     }
-}
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const tenant = await Tenant.create({
+      name: `${email}'s Workspace`,
+    });
+
+    if (!tenant?._id) {
+      return res.status(500).json({
+        error: "Tenant creation failed. Please try again.",
+      });
+    }
+
+    const user = await User.create({
+      email,
+      passwordHash,
+      emailVerified: process.env.NODE_ENV === "test",
+      tenantId: tenant._id,
+    });
+
+    const token = signEmailToken(user._id.toString());
+
+    try {
+      await sendVerificationEmail(user.email, token);
+    } catch (error) {
+      req.log?.error(error, "Verification email sending failed");
+    }
+
+    return res.status(201).json({
+      message:
+        "Account created. Please verify your email before logging in.",
+    });
+  } catch (error) {
+    req.log?.error(error, "Signup failed");
+
+    return res.status(500).json({
+      error: "Something went wrong. Please try again.",
+    });
+  }
+};
+
+// ---------------- LOGIN ----------------
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const email =
+      typeof req.body.email === "string"
+        ? req.body.email.trim().toLowerCase()
+        : "";
+
+    const password =
+      typeof req.body.password === "string"
+        ? req.body.password
+        : "";
+
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Missing credentials.",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(401).json({
+        error: "Invalid email or password.",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(
+      password,
+      user.passwordHash
+    );
+
+    if (!isMatch) {
+      return res.status(401).json({
+        error: "Invalid email or password.",
+      });
+    }
+
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        error: "Please verify your email before logging in.",
+      });
+    }
+
+    await createAuditLog({
+      actorId: user._id.toString(),
+      action: "USER_LOGIN",
+      targetType: "User",
+      targetId: user._id.toString(),
+      ip: req.ip,
+      requestId: req.requestId,
+    });
+
+    const accessToken = signAccessToken(
+      user._id.toString(),
+      user.role,
+      user.tenantId.toString()
+    );
+
+    const refreshToken = signRefreshToken(
+      user._id.toString(),
+      user.role,
+      user.tenantId.toString()
+    );
+
+    return res
+      .cookie("access_token", accessToken, accessCookieOptions)
+      .cookie("refresh_token", refreshToken, refreshCookieOptions)
+      .status(200)
+      .json({
+        message: "Login successful",
+        user: {
+          _id: user._id,
+          email: user.email,
+          role: user.role,
+          emailVerified: user.emailVerified,
+          tenantId: user.tenantId,
+          name: user.name,
+          phone: user.phone,
+          linkedin: user.linkedin,
+          github: user.github,
+          leetcode: user.leetcode,
+          avatar: user.avatar,
+          resume: user.resume,
+        },
+      });
+  } catch (error) {
+    req.log?.error(error, "Login failed");
+
+    return res.status(500).json({
+      error: "Something went wrong. Please try again.",
+    });
+  }
+};
+
+// ---------------- CURRENT USER ----------------
 
 export const me = async (req: AuthRequest, res: Response) => {
-  const user = await User.findById(req.user.userId).select(
-    "_id email role emailVerified tenantId resume name phone linkedin github leetcode avatar"
-  );
+  try {
+    const user = await User.findById(req.user.userId).select(
+      "_id email role emailVerified tenantId resume name phone linkedin github leetcode avatar"
+    );
 
-  if (!user) {
-    return res.status(401).json({ error: "User not found." });
+    if (!user) {
+      return res.status(401).json({
+        error: "User not found.",
+      });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    req.log?.error(error, "Fetching current user failed");
+
+    return res.status(500).json({
+      error: "Could not retrieve the current user.",
+    });
   }
-
-  res.json({ user });
 };
 
-export const logout=(_req:Request,res:Response)=>{
-    const cookieOptions = {
-        httpOnly: true,
-        sameSite: "lax" as const,
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-};
-
-res
-  .clearCookie("access_token", cookieOptions)
-  .clearCookie("refresh_token", cookieOptions)
-  .json({ message: "Logged out" });
-};
+// ---------------- REFRESH SESSION ----------------
 
 export const refresh = async (req: Request, res: Response) => {
-  const refreshToken = req.cookies.refresh_token;
-  if (!refreshToken) return res.status(401).json({ error: "No refresh token." });
+  const refreshToken = req.cookies?.refresh_token;
+
+  if (!refreshToken) {
+    return res.status(401).json({
+      error: "No refresh token.",
+    });
+  }
 
   try {
-    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as { userId: string };
-    
-    const user = await User.findById(payload.userId).select("-password");
-    if (!user) return res.status(401).json({ error: "User not found." });
+    const secret = process.env.JWT_REFRESH_SECRET;
 
-    const newAccessToken = signAccessToken(user._id.toString(),user.role,user.tenantId.toString());
+    if (!secret) {
+      req.log?.error("JWT_REFRESH_SECRET is not configured");
 
-    const cookieOptions = {
-        httpOnly: true,
-        sameSite: "lax" as const,
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        };
+      return res.status(500).json({
+        error: "Authentication configuration error.",
+      });
+    }
 
-    res.cookie("access_token", newAccessToken, cookieOptions);
+    const payload = jwt.verify(
+      refreshToken,
+      secret
+    ) as { userId: string };
 
-    return res.json({
-    user: {
+    const user = await User.findById(payload.userId).select(
+      "-passwordHash"
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        error: "User not found.",
+      });
+    }
+
+    const newAccessToken = signAccessToken(
+      user._id.toString(),
+      user.role,
+      user.tenantId.toString()
+    );
+
+    res.cookie(
+      "access_token",
+      newAccessToken,
+      accessCookieOptions
+    );
+
+    return res.status(200).json({
+      user: {
         _id: user._id,
         email: user.email,
         role: user.role,
         emailVerified: user.emailVerified,
         tenantId: user.tenantId,
-
         name: user.name,
         phone: user.phone,
         linkedin: user.linkedin,
@@ -207,95 +298,196 @@ export const refresh = async (req: Request, res: Response) => {
         leetcode: user.leetcode,
         avatar: user.avatar,
         resume: user.resume,
-    },
+      },
     });
-    // <--- important: send user object
-  } catch {
-    return res.status(401).json({ error: "Invalid refresh Token." });
+  } catch (error) {
+    // Do not log the token itself.
+    req.log?.info("Refresh token validation failed");
+
+    return res.status(401).json({
+      error: "Invalid or expired refresh token.",
+    });
   }
 };
+
+// ---------------- LOGOUT ----------------
+
+export const logout = (_req: Request, res: Response) => {
+  return res
+    .clearCookie("access_token", authCookieOptions)
+    .clearCookie("refresh_token", authCookieOptions)
+    .status(200)
+    .json({ message: "Logged out" });
+};
+
+// ---------------- VERIFY EMAIL ----------------
 
 export const verifyEmail = async (req: Request, res: Response) => {
   const { token } = req.body;
 
-  if (!token) {
+  if (typeof token !== "string" || !token) {
     return res.status(400).json({
-      error: "Verification token missing",
+      error: "Verification token missing.",
     });
   }
 
   try {
-    const payload = jwt.verify(
-      token,
-      process.env.JWT_EMAIL_SECRET!
-    ) as { userId: string };
+    const secret = process.env.JWT_EMAIL_SECRET;
+
+    if (!secret) {
+      req.log?.error("JWT_EMAIL_SECRET is not configured");
+
+      return res.status(500).json({
+        error: "Email verification is not configured.",
+      });
+    }
+
+    const payload = jwt.verify(token, secret) as {
+      userId: string;
+    };
 
     const user = await User.findById(payload.userId);
 
     if (!user) {
       return res.status(404).json({
-        error: "User not found",
+        error: "User not found.",
       });
     }
 
     if (user.emailVerified) {
-      return res.json({
-        message: "Email already verified",
+      return res.status(200).json({
+        message: "Email already verified.",
       });
     }
 
     user.emailVerified = true;
     await user.save();
 
-    return res.json({
-      message: "Email verified successfully",
+    return res.status(200).json({
+      message: "Email verified successfully.",
     });
   } catch {
     return res.status(400).json({
-      error: "Invalid or expired verification link",
+      error: "Invalid or expired verification link.",
     });
   }
 };
-export const requestPasswordReset=async(req:Request,res:Response)=>{
-    const {email}=req.body;
-    const user=await User.findOne({email});
-    if(user){
-        const token=signResetToken(user._id.toString());
 
-        const link=`${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+// ---------------- REQUEST PASSWORD RESET ----------------
 
-        try{
-            await sendResetPasswordEmail(email,link);
+export const requestPasswordReset = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const email =
+      typeof req.body.email === "string"
+        ? req.body.email.trim().toLowerCase()
+        : "";
+
+    if (email && emailRegex.test(email)) {
+      const user = await User.findOne({ email });
+
+      if (user) {
+        const token = signResetToken(user._id.toString());
+
+        const frontendUrl = process.env.FRONTEND_URL;
+
+        if (!frontendUrl) {
+          req.log?.error("FRONTEND_URL is not configured");
+
+          return res.status(500).json({
+            error: "Password reset is not configured.",
+          });
         }
-        catch(err){
-            req.log?.info("Reset email failed:");
-            req.log?.error(err);
+
+        const link =
+          `${frontendUrl.replace(/\/$/, "")}/reset-password` +
+          `?token=${encodeURIComponent(token)}`;
+
+        try {
+          await sendResetPasswordEmail(user.email, link);
+        } catch (error) {
+          req.log?.error(error, "Password reset email sending failed");
         }
+      }
     }
 
-    res.json({
-        message:"If an account with that email exists, a reset link has been sent."
+    // Avoid disclosing whether an email address has an account.
+    return res.status(200).json({
+      message:
+        "If an account with that email exists, a reset link has been sent.",
     });
+  } catch (error) {
+    req.log?.error(error, "Password reset request failed");
+
+    return res.status(500).json({
+      error: "Could not process the password reset request.",
+    });
+  }
 };
 
-export const resetPassword=async(req:Request,res:Response)=>{
-    const{token,newPassword}=req.body;
+// ---------------- RESET PASSWORD ----------------
 
-    if(!token || !newPassword){
-        return res.status(400).json({error:"Missing Fields"});
+export const resetPassword = async (
+  req: Request,
+  res: Response
+) => {
+  const { token, newPassword } = req.body;
+
+  if (
+    typeof token !== "string" ||
+    !token ||
+    typeof newPassword !== "string" ||
+    !newPassword
+  ) {
+    return res.status(400).json({
+      error: "Missing fields.",
+    });
+  }
+
+  if (!passwordRegex.test(newPassword)) {
+    return res.status(400).json({
+      error:
+        "Password must be 8+ characters with uppercase, lowercase, number, and special character.",
+    });
+  }
+
+  try {
+    const secret = process.env.JWT_RESET_SECRET;
+
+    if (!secret) {
+      req.log?.error("JWT_RESET_SECRET is not configured");
+
+      return res.status(500).json({
+        error: "Password reset is not configured.",
+      });
     }
 
-    try{
-        const payload=jwt.verify(token,process.env.JWT_RESET_SECRET!)as{userId:string};
-        const hash=await bcrypt.hash(newPassword,10);
+    const payload = jwt.verify(token, secret) as {
+      userId: string;
+    };
 
-        await User.findByIdAndUpdate(payload.userId,{
-            passwordHash:hash,
-        });
+    const passwordHash = await bcrypt.hash(newPassword, 10);
 
-        res.json({message:"Password updated successfully."});
+    const user = await User.findByIdAndUpdate(
+      payload.userId,
+      { passwordHash },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found.",
+      });
     }
-    catch{
-        res.status(400).json({error:"Invalid or expired token."});
-    }
-}
+
+    return res.status(200).json({
+      message: "Password updated successfully.",
+    });
+  } catch {
+    return res.status(400).json({
+      error: "Invalid or expired reset token.",
+    });
+  }
+};
