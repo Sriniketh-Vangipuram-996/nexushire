@@ -67,7 +67,7 @@ export const createJobApplication = async (req: Request, res: Response) => {
           requestId:req.requestId,
         },
         {
-          delay:10*1000
+          delay: Math.max(0, followUpDate.getTime() - Date.now())
         }
       );
     reminder.bullJobId=bullJob.id!;

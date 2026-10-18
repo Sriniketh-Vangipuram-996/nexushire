@@ -155,6 +155,7 @@ export async function startWorker() {
               html: remainderTemplate(jobTitle, company),
             });
 
+
             await Reminder.findByIdAndUpdate(reminderId, {
               status: "sent",
               sentAt: new Date(),
