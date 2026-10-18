@@ -1,19 +1,35 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../lib/axios";
 import axios from "axios";
 import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight } from "lucide-react";
 
 const VerifyEmailPage = () => {
-  const [params] = useSearchParams();
   const navigate = useNavigate();
 
   const [status, setStatus] = useState("Verifying your email...");
   const [state, setState] = useState<"loading" | "success" | "error">("loading");
 
+  const verificationStarted = useRef(false);
+
   useEffect(() => {
+    if (verificationStarted.current) return;
+    verificationStarted.current = true;
+
     const verifyEmail = async () => {
-      const token = params.get("token");
+      // Read the token before cleaning the URL.
+      const token = new URLSearchParams(
+        window.location.search
+      ).get("token");
+
+      // Remove the token from the visible URL and current history entry.
+      if (token) {
+        window.history.replaceState(
+          window.history.state,
+          document.title,
+          window.location.pathname + window.location.hash
+        );
+      }
 
       if (!token) {
         setState("error");
@@ -34,15 +50,17 @@ const VerifyEmailPage = () => {
         setState("error");
 
         if (axios.isAxiosError(err)) {
-          setStatus(err.response?.data?.error || "Verification failed.");
+          setStatus(
+            err.response?.data?.error || "Verification failed."
+          );
         } else {
           setStatus("Verification failed.");
         }
       }
     };
 
-    verifyEmail();
-  }, [navigate, params]);
+    void verifyEmail();
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden">
